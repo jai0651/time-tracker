@@ -1,11 +1,13 @@
 import { prisma } from '../prisma/prismaClient.js';
 
-export async function createTimeEntry(employeeId, startTs, endTs) {
+export async function createTimeEntry(employeeId, startTs, endTs, projectId, taskId) {
   return prisma.timeEntry.create({
     data: {
       employeeId,
       startTs,
       endTs,
+      projectId,
+      taskId,
     },
   });
 }

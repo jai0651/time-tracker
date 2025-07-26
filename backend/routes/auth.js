@@ -17,10 +17,9 @@ router.post('/activate', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  console.log(email, password)
+  
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   const employee = await findActiveEmployeeByEmail(email);
-  console.log(employee)
 
   if (!employee || !employee.hashedPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });

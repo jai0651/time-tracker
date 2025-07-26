@@ -5,14 +5,14 @@ import auth from '../middleware/auth.js';
 const router = express.Router();
 
 router.post('/', auth, async (req, res) => {
-  const { startTs, endTs } = req.body;
-  if (!startTs || !endTs) return res.status(400).json({ error: 'startTs and endTs required' });
+  const { startTs, endTs ,projectId,taskId} = req.body;
+  if (!startTs || !endTs || !projectId || !taskId ) return res.status(400).json({ error: 'startTs and endTs and projectId and taskId required' });
   const start = new Date(startTs);
   const end = new Date(endTs);
   if (isNaN(start) || isNaN(end) || end <= start) {
     return res.status(400).json({ error: 'Invalid timestamps' });
   }
-  const entry = await createTimeEntry(req.userId, start, end);
+  const entry = await createTimeEntry(req.userId, start, end, Number(projectId), Number(taskId));
   res.status(201).json(entry);
 });
 

@@ -8,62 +8,135 @@
 </head>
 <body>
     <div id="app">
-        <!-- Login Screen -->
+        <!-- Login Screen (Full Screen) -->
         <div id="login-screen" class="screen">
-            <div class="container">
-                <h1>Time Tracker</h1>
-                <p class="subtitle">Sign in to start tracking your time</p>
-                
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required>
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h1>Time Tracker</h1>
+                        <p class="subtitle">Sign in to start tracking your time</p>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">Sign In</button>
-                </form>
-                
-                <div id="login-error" class="error-message"></div>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Sign In</button>
+                    </form>
+                    <div id="login-error" class="error-message"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Timer Screen -->
-        <div id="timer-screen" class="screen hidden">
-            <div class="container">
-                <div class="header">
-                    <h2>Time Tracker</h2>
-                    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+        <!-- Authenticated App Layout -->
+        <div id="app-layout" class="app-layout hidden">
+            <!-- Sidebar Navigation -->
+            <aside id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <div class="app-logo">⏱️</div>
+                    <h3>Time Tracker</h3>
                 </div>
-                
-                <div class="timer-display">
-                    <div id="timer" class="timer">00:00:00</div>
-                    <div id="status" class="status">Ready to start</div>
+                <nav class="sidebar-nav">
+                    <button id="nav-timer" class="sidebar-link active">
+                        <span class="nav-icon">⏱️</span>
+                        <span class="nav-text">Timer</span>
+                    </button>
+                    <button id="nav-history" class="sidebar-link">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Time Entries</span>
+                    </button>
+                </nav>
+                <div class="sidebar-footer">
+                    <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
                 </div>
-                
-                <div class="timer-controls">
-                    <button id="start-btn" class="btn btn-success">Start Timer</button>
-                    <button id="stop-btn" class="btn btn-danger" disabled>Stop Timer</button>
-                </div>
-                
-                <div class="session-info">
-                    <div id="session-start" class="info-item">
-                        <span class="label">Session Start:</span>
-                        <span class="value">Not started</span>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main id="main-content" class="main-content">
+                <!-- Timer Screen -->
+                <div id="timer-screen" class="screen">
+                    <div class="page-header">
+                        <h2>Time Tracking</h2>
+                        <p>Track your time on projects and tasks</p>
                     </div>
-                    <div id="session-duration" class="info-item">
-                        <span class="label">Duration:</span>
-                        <span class="value">00:00:00</span>
+                    
+                    <div class="timer-card">
+                        <!-- Project/Task Selection -->
+                        <div class="selection-section">
+                            <div class="form-group">
+                                <label for="project-select">Project</label>
+                                <select id="project-select" class="select" required>
+                                    <option value="">Select a project</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="task-select">Task</label>
+                                <select id="task-select" class="select" required>
+                                    <option value="">Select a task</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Timer Display -->
+                        <div class="timer-display">
+                            <div id="timer" class="timer">00:00:00</div>
+                            <div id="status" class="status">Ready to start</div>
+                        </div>
+
+                        <!-- Timer Controls -->
+                        <div class="timer-controls">
+                            <button id="start-btn" class="btn btn-success btn-large">
+                                <span class="btn-icon">▶️</span>
+                                Start Timer
+                            </button>
+                            <button id="stop-btn" class="btn btn-danger btn-large" disabled>
+                                <span class="btn-icon">⏹️</span>
+                                Stop Timer
+                            </button>
+                        </div>
+
+                        <!-- Session Info -->
+                        <div class="session-info">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Session Start</span>
+                                    <span id="session-start" class="info-value">Not started</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Duration</span>
+                                    <span id="session-duration" class="info-value">00:00:00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <button id="save-entry-btn" class="btn btn-primary btn-large" disabled>
+                            <span class="btn-icon">💾</span>
+                            Save Time Entry
+                        </button>
+
+                        <!-- Messages -->
+                        <div id="timer-error" class="error-message"></div>
+                        <div id="timer-success" class="success-message"></div>
                     </div>
                 </div>
-                
-                <div id="timer-error" class="error-message"></div>
-                <div id="timer-success" class="success-message"></div>
-            </div>
+
+                <!-- Time Entries Screen -->
+                <div id="history-screen" class="screen hidden">
+                    <div class="page-header">
+                        <h2>Time Entries</h2>
+                        <p>View your time tracking history</p>
+                    </div>
+                    
+                    <div class="history-card">
+                        <div id="history-list" class="history-list"></div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
