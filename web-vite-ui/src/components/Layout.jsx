@@ -47,7 +47,12 @@ export default function Layout({ children }) {
             </>
           )}
           {isAuthenticated && (
-            <Button onClick={handleLogout} color="gray" variant="soft" className="ml-4">Logout</Button>
+            <Button 
+              onClick={handleLogout} 
+              className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl ml-4"
+            >
+              Logout
+            </Button>
           )}
         </nav>
       </header>

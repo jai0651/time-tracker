@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import api from '../api';
 import Layout from '../components/Layout';
 import { Card, Badge, Button, Text, Heading, Flex, Box, Separator, Container } from '@radix-ui/themes';
-import { PersonIcon, EnvelopeClosedIcon, CheckCircledIcon, ClockIcon } from '@radix-ui/react-icons';
+import { PersonIcon, EnvelopeClosedIcon, CheckCircledIcon, ClockIcon, CrossCircledIcon } from '@radix-ui/react-icons';
 
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [deactivatingId, setDeactivatingId] = useState(null);
 
   const fetchEmployees = async () => {
     try {
@@ -34,6 +35,32 @@ export default function AdminEmployeesPage() {
       fetchEmployees();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add employee');
+    }
+  };
+
+  const handleDeactivate = async (employeeId, employeeName) => {
+    if (!window.confirm(`Are you sure you want to deactivate ${employeeName || 'this employee'}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeactivatingId(employeeId);
+    setError('');
+    setSuccess('');
+
+    try {
+      await api.patch(`/employees/${employeeId}/deactivate`);
+      setSuccess('Employee deactivated successfully');
+      fetchEmployees();
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || 'Failed to deactivate employee';
+      setError(errorMessage);
+      
+      // If there are project/task associations, show specific message
+      if (errorMessage.includes('project') || errorMessage.includes('task')) {
+        setError(`${errorMessage}. Please remove the employee from all projects and tasks first.`);
+      }
+    } finally {
+      setDeactivatingId(null);
     }
   };
 
@@ -145,14 +172,28 @@ export default function AdminEmployeesPage() {
                     </Flex>
                   </Box>
                 </Flex>
-                <Badge 
-                  size="2"
-                  color={emp.status === 'active' ? 'green' : 'yellow'} 
-                  variant="soft"
-                  className="px-3 py-1"
-                >
-                  {emp.status === 'active' ? 'Active' : 'Pending Activation'}
-                </Badge>
+                <Flex align="center" gap="3">
+                  <Badge 
+                    size="2"
+                    color={emp.status === 'active' ? 'green' : 'yellow'} 
+                    variant="soft"
+                    className="px-3 py-1"
+                  >
+                    {emp.status === 'active' ? 'Active' : 'Pending Activation'}
+                  </Badge>
+                  
+                  {emp.status === 'active' && (
+                    <Button
+                      size="2"
+                      onClick={() => handleDeactivate(emp.id, emp.name)}
+                      disabled={deactivatingId === emp.id}
+                      className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                    >
+                      <CrossCircledIcon />
+                      {deactivatingId === emp.id ? 'Deactivating...' : 'Deactivate'}
+                    </Button>
+                  )}
+                </Flex>
               </Flex>
 
               <Separator className="my-4" />

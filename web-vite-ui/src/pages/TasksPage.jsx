@@ -223,7 +223,7 @@ export default function TasksPage() {
           <Button 
             onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', projectId: '' }); }}
             size="3"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg shadow-sm transition-colors"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <PlusIcon className="mr-2" />
             Add Task
@@ -256,18 +256,16 @@ export default function TasksPage() {
                 </div>
                 <div className="flex gap-2">
                   <Button 
-                    variant="ghost" 
                     size="2"
                     onClick={(e) => handleEditClick(e, task)}
-                    className="text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Pencil1Icon />
                   </Button>
                   <Button 
-                    variant="ghost" 
                     size="2"
                     onClick={(e) => handleDeleteClick(e, task.id)}
-                    className="text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <TrashIcon />
                   </Button>
@@ -313,10 +311,9 @@ export default function TasksPage() {
                   )}
                   
                   <Button 
-                    variant="ghost" 
                     size="2"
                     onClick={(e) => handleAssignClick(e, task)}
-                    className="mt-3 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors p-0"
+                    className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Assign Team Members
                   </Button>
@@ -383,13 +380,15 @@ export default function TasksPage() {
                 <div className="flex gap-3 justify-end pt-4">
                   <Button 
                     type="button" 
-                    variant="ghost" 
                     onClick={() => setShowForm(false)}
-                    className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-sm transition-colors">
+                  <Button 
+                    type="submit" 
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
                     {editingId ? 'Update' : 'Create'}
                   </Button>
                 </div>
@@ -424,7 +423,6 @@ export default function TasksPage() {
               {/* Select All / Clear All buttons */}
               <div className="flex gap-2 mb-4">
                 <Button 
-                  variant="ghost" 
                   size="2"
                   onClick={() => {
                     const projectEmployees = projects.find(p => p.id === assigningTask.projectId)?.employees || [];
@@ -434,18 +432,17 @@ export default function TasksPage() {
                     setSelectedEmployeeIds(availableEmployeeIds);
                     console.log('Selected all available employees:', availableEmployeeIds);
                   }}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Select All
                 </Button>
                 <Button 
-                  variant="ghost" 
                   size="2"
                   onClick={() => {
                     setSelectedEmployeeIds([]);
                     console.log('Cleared all selections');
                   }}
-                  className="text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Clear All
                 </Button>
@@ -494,13 +491,15 @@ export default function TasksPage() {
               
               <div className="flex gap-3 justify-end">
                 <Button 
-                  variant="ghost" 
                   onClick={() => setAssigningTask(null)}
-                  className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleAssignSubmit} className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-sm transition-colors">
+                <Button 
+                  onClick={handleAssignSubmit} 
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
                   Save Assignment
                 </Button>
               </div>

@@ -6,10 +6,14 @@ export async function findPendingEmployeeByToken(token) {
   return prisma.employee.findFirst({ where: { activationToken: token, status: 'pending' } });
 }
 
-export async function updateEmployeePassword(id, hashedPassword) {
+export async function updateEmployeePassword(id, hashedPassword, name) {
   return prisma.employee.update({
     where: { id },
-    data: { hashedPassword, status: 'active', activationToken: null },
+    data: { 
+      hashedPassword, 
+      name: name,
+      status: 'active'
+    },
   });
 }
 

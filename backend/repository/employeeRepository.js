@@ -1,8 +1,14 @@
 import { prisma } from '../prisma/prismaClient.js';
+import crypto from 'crypto';
 
 export async function createEmployee(email, activationToken, status) {
   return prisma.employee.create({
-    data: { email, activationToken, status },
+    data: {
+      email,
+      activationToken,
+      status,
+      role: 'employee'
+    }
   });
 }
 
@@ -11,12 +17,8 @@ export async function findEmployeeByEmail(email) {
 }
 
 export async function listEmployees() {
-  return prisma.employee.findMany({ 
-    select: { 
-      id: true, 
-      email: true, 
-      name: true, 
-      status: true,
+  return prisma.employee.findMany({
+    include: {
       projects: {
         select: {
           id: true,
@@ -36,11 +38,9 @@ export async function listEmployees() {
           }
         }
       }
-    } 
+    }
   });
 }
-
-
 
 export async function findEmployeeById(id) {
   return prisma.employee.findUnique({
@@ -74,13 +74,49 @@ export async function findEmployeeById(id) {
 }
 
 export async function updateEmployeeName(id, name) {
-  return prisma.employee.update({ where: { id }, data: { name }, select: { id: true, email: true, name: true, status: true } });
+  return prisma.employee.update({
+    where: { id },
+    data: { name }
+  });
 }
 
 export async function deactivateEmployee(id) {
+  // First check if employee has any project or task associations
+  const employee = await prisma.employee.findUnique({
+    where: { id },
+    include: {
+      projects: {
+        select: { id: true, name: true }
+      },
+      tasks: {
+        select: { id: true, name: true }
+      }
+    }
+  });
+
+  if (!employee) {
+    throw new Error('Employee not found');
+  }
+
+  // Check for project associations
+  if (employee.projects && employee.projects.length > 0) {
+    const projectNames = employee.projects.map(p => p.name).join(', ');
+    throw new Error(`Cannot deactivate employee. They are still assigned to projects: ${projectNames}`);
+  }
+
+  // Check for task associations
+  if (employee.tasks && employee.tasks.length > 0) {
+    const taskNames = employee.tasks.map(t => t.name).join(', ');
+    throw new Error(`Cannot deactivate employee. They are still assigned to tasks: ${taskNames}`);
+  }
+
+  // If no associations, proceed with deactivation
   return prisma.employee.update({
     where: { id },
-    data: { status: 'pending', hashedPassword: null, activationToken: null },
-    select: { id: true, email: true, name: true, status: true }
+    data: { 
+      status: 'inactive',
+      hashedPassword: null,
+      activationToken: null
+    }
   });
 } 
