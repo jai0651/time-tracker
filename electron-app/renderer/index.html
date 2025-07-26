@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen">
+            <div class="container">
+                <h1>Time Tracker</h1>
+                <p class="subtitle">Sign in to start tracking your time</p>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </form>
+                
+                <div id="login-error" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Timer Screen -->
+        <div id="timer-screen" class="screen hidden">
+            <div class="container">
+                <div class="header">
+                    <h2>Time Tracker</h2>
+                    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                </div>
+                
+                <div class="timer-display">
+                    <div id="timer" class="timer">00:00:00</div>
+                    <div id="status" class="status">Ready to start</div>
+                </div>
+                
+                <div class="timer-controls">
+                    <button id="start-btn" class="btn btn-success">Start Timer</button>
+                    <button id="stop-btn" class="btn btn-danger" disabled>Stop Timer</button>
+                </div>
+                
+                <div class="session-info">
+                    <div id="session-start" class="info-item">
+                        <span class="label">Session Start:</span>
+                        <span class="value">Not started</span>
+                    </div>
+                    <div id="session-duration" class="info-item">
+                        <span class="label">Duration:</span>
+                        <span class="value">00:00:00</span>
+                    </div>
+                </div>
+                
+                <div id="timer-error" class="error-message"></div>
+                <div id="timer-success" class="success-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html> 
