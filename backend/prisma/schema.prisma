@@ -16,6 +16,9 @@ model Employee {
   status           String      // "pending" or "active"
   timeEntries      TimeEntry[]
   role             String      @default("employee")
+  name             String?
+  projects         Project[]   @relation("ProjectEmployees")
+  tasks            Task[]      @relation("TaskEmployees")
 }
 
 model TimeEntry {
@@ -24,4 +27,26 @@ model TimeEntry {
   employeeId Int
   startTs    DateTime
   endTs      DateTime
+  projectId  Int?
+  project    Project? @relation("ProjectTimeEntries", fields: [projectId], references: [id])
+  taskId     Int?
+  task       Task?    @relation("TaskTimeEntries", fields: [taskId], references: [id])
+}
+
+model Project {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  employees   Employee[]  @relation("ProjectEmployees")
+  tasks       Task[]
+  timeEntries TimeEntry[] @relation("ProjectTimeEntries")
+}
+
+model Task {
+  id         Int        @id @default(autoincrement())
+  name       String
+  projectId  Int
+  project    Project    @relation(fields: [projectId], references: [id])
+  employees  Employee[] @relation("TaskEmployees")
+  timeEntries TimeEntry[] @relation("TaskTimeEntries")
 }

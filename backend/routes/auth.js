@@ -17,11 +17,19 @@ router.post('/activate', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password)
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   const employee = await findActiveEmployeeByEmail(email);
-  if (!employee || employee.status !== 'active' || !employee.hashedPassword) {
+  console.log(employee)
+
+  if (!employee || !employee.hashedPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+
+  if(employee.status !=='active'){
+    return res.status(401).json({ error: 'Account is not active' });
+  }
+  
   const valid = await comparePassword(password, employee.hashedPassword);
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
   const token = generateJWT(employee);

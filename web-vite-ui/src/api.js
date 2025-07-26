@@ -12,4 +12,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default api; 
+export default api;
+
+export async function listEmployees() {
+  const res = await api.get('/employees');
+  return res.data;
+} 

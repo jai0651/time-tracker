@@ -1,9 +1,22 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
+import { Button } from '@radix-ui/themes';
+
+function getUserFromToken() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    return jwtDecode(token);
+  } catch {
+    return null;
+  }
+}
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
   const isAuthenticated = !!localStorage.getItem('token');
+  const user = getUserFromToken();
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('email');
@@ -15,11 +28,26 @@ export default function Layout({ children }) {
         <Link to="/" className="flex items-center gap-2">
           <span className="text-2xl font-extrabold text-indigo-700 tracking-tight">insightful<span className="text-blue-500">.io</span></span>
         </Link>
-        <nav className="flex gap-4 items-center">
-          <Link to="/login" className="text-gray-600 hover:text-indigo-700 font-medium">Login</Link>
-          <Link to="/dashboard" className="text-gray-600 hover:text-indigo-700 font-medium">Dashboard</Link>
+        <nav className="flex gap-2 items-center">
+          {isAuthenticated && user && (
+            <>
+              {user.role === 'admin' ? (
+                <>
+                  <Link to="/admin/employees" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Employees</Link>
+                  <Link to="/admin/projects" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Projects</Link>
+                  <Link to="/admin/tasks" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Tasks</Link>
+                  <Link to="/time-entries" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Time Entries</Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/dashboard" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Dashboard</Link>
+                  <Link to="/time-entries" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Time Entries</Link>
+                </>
+              )}
+            </>
+          )}
           {isAuthenticated && (
-            <button onClick={handleLogout} className="ml-4 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition">Logout</button>
+            <Button onClick={handleLogout} color="gray" variant="soft" className="ml-4">Logout</Button>
           )}
         </nav>
       </header>

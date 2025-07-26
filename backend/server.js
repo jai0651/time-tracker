@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import employeesRouter from './routes/employees.js';
 import authRouter from './routes/auth.js';
 import timeEntriesRouter from './routes/timeEntries.js';
+import projectsRouter from './routes/projects.js';
+import tasksRouter from './routes/tasks.js';
 import cors from 'cors';
 
 dotenv.config();
@@ -16,6 +18,8 @@ app.use(express.json());
 app.use('/employees', employeesRouter);
 app.use('/auth', authRouter);
 app.use('/time-entries', timeEntriesRouter);
+app.use('/projects', projectsRouter);
+app.use('/tasks', tasksRouter);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok' });

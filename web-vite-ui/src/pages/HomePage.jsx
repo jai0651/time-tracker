@@ -17,8 +17,10 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   let dashboardButton = null;
+  let adminLinks = null;
+  let timeEntriesButton = null;
   if (user) {
-    if (user.email && user.email.startsWith("admin@")) {
+    if (user.role === 'admin') {
       dashboardButton = (
         <button
           className="bg-gradient-to-r from-purple-600 to-blue-500 text-white px-6 py-3 rounded-lg shadow-lg text-lg font-semibold hover:scale-105 transition-transform duration-200 mr-2"
@@ -26,6 +28,22 @@ const HomePage = () => {
         >
           Admin Employees
         </button>
+      );
+      adminLinks = (
+        <>
+          <button
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-lg shadow-lg text-lg font-semibold hover:scale-105 transition-transform duration-200 mr-2"
+            onClick={() => navigate("/admin/projects")}
+          >
+            Projects
+          </button>
+          <button
+            className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-lg shadow-lg text-lg font-semibold hover:scale-105 transition-transform duration-200 mr-2"
+            onClick={() => navigate("/admin/tasks")}
+          >
+            Tasks
+          </button>
+        </>
       );
     } else {
       dashboardButton = (
@@ -37,6 +55,14 @@ const HomePage = () => {
         </button>
       );
     }
+    timeEntriesButton = (
+      <button
+        className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg shadow-lg text-lg font-semibold hover:scale-105 transition-transform duration-200 mr-2"
+        onClick={() => navigate("/time-entries")}
+      >
+        Time Entries
+      </button>
+    );
   }
 
   return (
@@ -65,8 +91,14 @@ const HomePage = () => {
             </Link>
           </div>
         )}
-        {dashboardButton}
-        <div className="mt-10 text-gray-400 text-xs">© {new Date().getFullYear()} Time Tracker AI SaaS. All rights reserved.</div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {dashboardButton}
+          {adminLinks}
+          {timeEntriesButton}
+        </div>
+        <div className="mt-10 text-gray-400 text-xs">
+          © {new Date().getFullYear()} Time Tracker AI SaaS. All rights reserved.
+        </div>
       </main>
     </div>
   );

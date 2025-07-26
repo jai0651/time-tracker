@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api";
 import { jwtDecode } from "jwt-decode";
+import { Button as RadixButton } from '@radix-ui/themes';
+import { Label } from '@radix-ui/react-label';
 
 const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -45,7 +47,7 @@ const LoginPage = () => {
         <h2 className="text-3xl font-extrabold text-gray-900 mb-4 drop-shadow-lg">Sign In</h2>
         <form onSubmit={handleSubmit} className="w-full space-y-5">
           <div>
-            <label className="block mb-1 font-medium" htmlFor="email">Email</label>
+            <Label className="block mb-1 font-medium" htmlFor="email">Email</Label>
             <input
               type="email"
               id="email"
@@ -57,7 +59,7 @@ const LoginPage = () => {
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium" htmlFor="password">Password</label>
+            <Label className="block mb-1 font-medium" htmlFor="password">Password</Label>
             <input
               type="password"
               id="password"
@@ -69,13 +71,13 @@ const LoginPage = () => {
             />
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
-          <button
+          <RadixButton
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg shadow-lg text-lg font-semibold hover:scale-105 transition-transform duration-200"
             disabled={loading}
           >
             {loading ? "Signing in..." : "Sign In"}
-          </button>
+          </RadixButton>
         </form>
         <div className="mt-6 text-sm text-gray-600">
           Don't have an account?{' '}

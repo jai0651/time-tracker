@@ -14,7 +14,8 @@ export async function updateEmployeePassword(id, hashedPassword) {
 }
 
 export async function findActiveEmployeeByEmail(email) {
-  return prisma.employee.findFirst({ where: { email }, where: { status: 'active' } });
+  console.log(email);
+  return prisma.employee.findUnique({ where: { email } });
 }
 
 export async function comparePassword(plain, hash) {
