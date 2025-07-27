@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { listProjects, createProject, updateProject, deleteProject, assignEmployees, removeEmployee } from '../repository/projectRepository';
-import { listEmployees } from '../api';
 import { Card, Badge, Button, Text, Heading, Flex, Box, Separator, Container, Dialog, Checkbox } from '@radix-ui/themes';
 import { FileIcon, PlusIcon, Pencil1Icon, TrashIcon, PersonIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { listEmployees } from '../repository/employeeRepository';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -11,7 +11,14 @@ export default function ProjectsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState({ 
+    name: '', 
+    description: '', 
+    billable: false,
+    statuses: [],
+    priorities: [],
+    teams: []
+  });
   const [editingId, setEditingId] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [assigningProject, setAssigningProject] = useState(null);
@@ -53,7 +60,12 @@ export default function ProjectsPage() {
   }, [assigningProject]);
 
   const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setForm({ ...form, [name]: checked });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -69,7 +81,14 @@ export default function ProjectsPage() {
         setSuccess('Project created successfully!');
       }
       setShowForm(false);
-      setForm({ name: '', description: '' });
+      setForm({ 
+        name: '', 
+        description: '', 
+        billable: false,
+        statuses: [],
+        priorities: [],
+        teams: []
+      });
       setEditingId(null);
       setError(''); // Clear any previous errors
       fetchProjects();
@@ -85,7 +104,14 @@ export default function ProjectsPage() {
   const handleEditClick = (e, project) => {
     console.log('Edit button clicked for project:', project);
     console.log('Setting showForm to true, editingId to:', project.id);
-    setForm({ name: project.name, description: project.description || '' });
+    setForm({ 
+      name: project.name, 
+      description: project.description || '',
+      billable: project.billable || false,
+      statuses: project.statuses || [],
+      priorities: project.priorities || [],
+      teams: project.teams || []
+    });
     setEditingId(project.id);
     setShowForm(true);
     console.log('State should be updated now');
@@ -197,7 +223,18 @@ export default function ProjectsPage() {
         <div className="mb-8 flex justify-between items-center">
           <div></div>
           <Button 
-            onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', description: '' }); }}
+            onClick={() => { 
+              setShowForm(true); 
+              setEditingId(null); 
+              setForm({ 
+                name: '', 
+                description: '', 
+                billable: false,
+                statuses: [],
+                priorities: [],
+                teams: []
+              }); 
+            }}
             size="3"
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
           >
@@ -229,6 +266,17 @@ export default function ProjectsPage() {
                   {project.description && (
                     <Text size="2" className="text-gray-600">{project.description}</Text>
                   )}
+                  <div className="flex gap-2 mt-2">
+                    {project.billable && (
+                      <Badge variant="soft" color="green">Billable</Badge>
+                    )}
+                    {project.statuses && project.statuses.length > 0 && (
+                      <Badge variant="soft" color="blue">{project.statuses.length} Statuses</Badge>
+                    )}
+                    {project.priorities && project.priorities.length > 0 && (
+                      <Badge variant="soft" color="purple">{project.priorities.length} Priorities</Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -357,6 +405,16 @@ export default function ProjectsPage() {
                     rows="3"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="billable"
+                    checked={form.billable}
+                    onChange={handleFormChange}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <Text size="2" weight="medium" className="text-gray-700">Billable Project</Text>
                 </div>
                 <div className="flex gap-3 justify-end pt-4">
                   <Button 

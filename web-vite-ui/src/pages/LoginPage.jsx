@@ -25,8 +25,8 @@ const LoginPage = () => {
       localStorage.setItem("token", token);
       // Decode JWT to get user info
       const decodedToken = jwtDecode(token);
-      if (decodedToken.role === "admin") {
-        navigate("/admin/employees");
+      if (decodedToken.email === "jai@admin") {
+        navigate("/admin/employee");
       } else {
         navigate("/dashboard");
       }

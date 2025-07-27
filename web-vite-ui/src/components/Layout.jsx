@@ -31,17 +31,16 @@ export default function Layout({ children }) {
         <nav className="flex gap-2 items-center">
           {isAuthenticated && user && (
             <>
-              {user.role === 'admin' ? (
+              {user.email === 'jai@admin' ? (
                 <>
-                  <Link to="/admin/employees" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Employees</Link>
-                  <Link to="/admin/projects" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Projects</Link>
-                  <Link to="/admin/tasks" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Tasks</Link>
-                  <Link to="/time-entries" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Time Entries</Link>
+                  <Link to="/admin/employee" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Employee</Link>
+                  <Link to="/admin/project" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Project</Link>
+                  <Link to="/admin/task" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Task</Link>
+                  <Link to="/admin/shift" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Shift</Link>
                 </>
               ) : (
                 <>
                   <Link to="/dashboard" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Dashboard</Link>
-                  <Link to="/time-entries" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Time Entries</Link>
                 </>
               )}
             </>

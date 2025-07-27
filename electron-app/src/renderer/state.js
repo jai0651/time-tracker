@@ -5,11 +5,10 @@ class AppState {
     this.startTime = null;
     this.currentSession = null;
     this.employee = null;
-    this.projects = [];
-    this.tasks = [];
-    this.timeEntries = [];
-    this.selectedProjectId = null;
-    this.selectedTaskId = null;
+    this.currentShift = null;
+    this.currentActivity = null;
+    this.shifts = [];
+    this.activities = [];
     
     // Performance optimizations
     this.lastTimerUpdate = 0;
@@ -37,9 +36,7 @@ class AppState {
     this.startTime = new Date();
     this.currentSession = {
       startTime: this.startTime,
-      startTimestamp: this.startTime.getTime(),
-      projectId: this.selectedProjectId,
-      taskId: this.selectedTaskId
+      startTimestamp: this.startTime.getTime()
     };
   }
 
@@ -52,53 +49,76 @@ class AppState {
     
     return {
       startTs: this.currentSession.startTimestamp,
-      endTs: endTime.getTime(),
-      projectId: this.selectedProjectId,
-      taskId: this.selectedTaskId
+      endTs: endTime.getTime()
     };
   }
 
   // Employee data
   setEmployeeData(employee) {
     this.employee = employee;
-    this.projects = employee.projects || [];
-    this.tasks = employee.tasks || [];
   }
 
-  getProjects() {
-    return this.projects;
+  // Shift management (employees view scheduled shifts)
+  setCurrentShift(shift) {
+    this.currentShift = shift;
   }
 
-  getTasks() {
-    return this.tasks;
+  getCurrentShift() {
+    return this.currentShift;
   }
 
-  getFilteredTasks() {
-    if (!this.selectedProjectId) return this.tasks;
-    return this.tasks.filter(task => task.project && task.project.id == this.selectedProjectId);
+  hasSelectedShift() {
+    return this.currentShift !== null;
   }
 
-  // Selection state
-  setSelectedProject(projectId) {
-    this.selectedProjectId = projectId;
-    this.selectedTaskId = null; // Reset task selection when project changes
+  canStartActivity() {
+    return this.hasSelectedShift() && !this.hasActiveActivity();
   }
 
-  setSelectedTask(taskId) {
-    this.selectedTaskId = taskId;
+  // Activity management (employees create activities within shifts)
+  setCurrentActivity(activity) {
+    this.currentActivity = activity;
   }
 
-  canStartTimer() {
-    return this.selectedProjectId && this.selectedTaskId && !this.isTimerRunning;
+  getCurrentActivity() {
+    return this.currentActivity;
   }
 
-  // Time entries
-  setTimeEntries(entries) {
-    this.timeEntries = entries;
+  hasActiveActivity() {
+    return this.currentActivity && !this.currentActivity.end;
   }
 
-  getTimeEntries() {
-    return this.timeEntries;
+  canEndActivity() {
+    return this.hasActiveActivity();
+  }
+
+  // Shifts history
+  setShifts(shifts) {
+    this.shifts = shifts;
+  }
+
+  getShifts() {
+    return this.shifts;
+  }
+
+  getTodayShifts() {
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    return this.shifts.filter(shift => {
+      const shiftStart = new Date(shift.start);
+      return shiftStart >= startOfDay && shiftStart <= endOfDay;
+    });
+  }
+
+  // Activities
+  setActivities(activities) {
+    this.activities = activities;
+  }
+
+  getActivities() {
+    return this.activities;
   }
 
   // Animation frame management
@@ -117,11 +137,10 @@ class AppState {
     this.startTime = null;
     this.currentSession = null;
     this.employee = null;
-    this.projects = [];
-    this.tasks = [];
-    this.timeEntries = [];
-    this.selectedProjectId = null;
-    this.selectedTaskId = null;
+    this.currentShift = null;
+    this.currentActivity = null;
+    this.shifts = [];
+    this.activities = [];
     this.lastTimerUpdate = 0;
     
     if (this.animationFrameId) {

@@ -24,7 +24,7 @@ class AppController {
     document.getElementById('nav-history').addEventListener('click', () => {
       this.uiManager.showScreen('history-screen');
       this.uiManager.setActiveSidebarLink('nav-history');
-      this.loadTimeEntries();
+      this.loadShifts();
     });
 
     if (this.state.getToken()) {
@@ -40,17 +40,21 @@ class AppController {
     // Login form
     this.uiManager.elements.loginForm.addEventListener('submit', this.handleLogin.bind(this));
     
-    // Timer controls
-    this.uiManager.elements.startBtn.addEventListener('click', this.handleStartTimer.bind(this));
-    this.uiManager.elements.stopBtn.addEventListener('click', this.handleStopTimer.bind(this));
-    this.uiManager.elements.saveEntryBtn.addEventListener('click', this.handleSaveTimeEntry.bind(this));
+    // Activity controls (employees create activities within shifts)
+    if (this.uiManager.elements.startActivityBtn) {
+      this.uiManager.elements.startActivityBtn.addEventListener('click', this.handleStartActivity.bind(this));
+    }
+    if (this.uiManager.elements.endActivityBtn) {
+      this.uiManager.elements.endActivityBtn.addEventListener('click', this.handleEndActivity.bind(this));
+    }
+    
+    // Shift selection (employees select from scheduled shifts)
+    if (this.uiManager.elements.shiftSelect) {
+      this.uiManager.elements.shiftSelect.addEventListener('change', this.handleShiftChange.bind(this));
+    }
     
     // Logout
     this.uiManager.elements.logoutBtn.addEventListener('click', this.handleLogout.bind(this));
-    
-    // Project/Task selection
-    this.uiManager.elements.projectSelect.addEventListener('change', this.handleProjectChange.bind(this));
-    this.uiManager.elements.taskSelect.addEventListener('change', this.handleTaskChange.bind(this));
   }
 
   // Authentication
@@ -74,44 +78,69 @@ class AppController {
     }
   }
 
-  // Timer management
-  handleStartTimer() {
-    this.timerManager.startTimer();
-    this.uiManager.updateTimerStatus('Timer running...', true);
-    // Fix: Get startTime after timer is started
-    if (this.state.startTime) {
-      this.uiManager.updateSessionInfo(this.state.startTime.toLocaleTimeString());
-    }
-  }
-
-  handleStopTimer() {
-    const timeEntryData = this.timerManager.stopTimer();
-    this.uiManager.updateTimerStatus('Session completed', false);
-    
-    if (timeEntryData) {
-      const duration = this.timerManager.formatDuration(timeEntryData.endTs - timeEntryData.startTs);
-      this.uiManager.updateSessionInfo(this.state.startTime.toLocaleTimeString(), duration);
-    }
-  }
-
-  async handleSaveTimeEntry() {
-    if (!this.state.currentSession?.endTime) return;
-    
+  // Activity management (employees create activities within shifts)
+  async handleStartActivity() {
     try {
-      const timeEntryData = {
-        startTs: this.state.currentSession.startTimestamp,
-        endTs: this.state.currentSession.endTime.getTime(),
-        projectId: this.state.selectedProjectId,
-        taskId: this.state.selectedTaskId
-      };
+      if (!this.state.currentShift) {
+        this.uiManager.showMessage('timerError', 'No shift selected. Please select a shift first.');
+        return;
+      }
       
-      await this.apiService.saveTimeEntry(timeEntryData);
-      this.uiManager.showMessage('timerSuccess', 'Time entry saved!');
-      await this.loadTimeEntries();
-      this.uiManager.elements.saveEntryBtn.disabled = true;
+      if (this.state.currentActivity) {
+        this.uiManager.showMessage('timerError', 'Activity already in progress.');
+        return;
+      }
+      
+      const activity = await this.apiService.createActivity(
+        this.state.currentShift.id, 
+        'Work activity'
+      );
+      this.state.setCurrentActivity(activity);
+      
+      this.timerManager.startTimer();
+      this.uiManager.updateTimerStatus('Activity started - Working...', true);
+      this.uiManager.updateActivityInfo(activity);
+      
+      this.uiManager.showMessage('timerSuccess', 'Activity started!');
     } catch (error) {
-      const errorMessage = error.response?.data?.error || 'Failed to save time entry.';
+      const errorMessage = error.response?.data?.error || 'Failed to start activity.';
       this.uiManager.showMessage('timerError', errorMessage);
+    }
+  }
+
+  async handleEndActivity() {
+    try {
+      if (!this.state.currentActivity) {
+        this.uiManager.showMessage('timerError', 'No active activity to end.');
+        return;
+      }
+      
+      const endedActivity = await this.apiService.endActivity(this.state.currentActivity.id);
+      this.state.setCurrentActivity(null);
+      
+      this.timerManager.stopTimer();
+      this.uiManager.updateTimerStatus('Activity ended', false);
+      this.uiManager.updateActivityInfo(endedActivity);
+      
+      this.uiManager.showMessage('timerSuccess', 'Activity ended!');
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || 'Failed to end activity.';
+      this.uiManager.showMessage('timerError', errorMessage);
+    }
+  }
+
+  // Shift selection (employees select from scheduled shifts)
+  handleShiftChange() {
+    const shiftId = this.uiManager.elements.shiftSelect?.value;
+    const selectedShift = this.state.shifts.find(shift => shift.id === shiftId);
+    
+    this.state.setCurrentShift(selectedShift || null);
+    this.uiManager.updateShiftInfo(selectedShift);
+    this.uiManager.updateTimerControls(this.state);
+    
+    // Load current activity for selected shift
+    if (selectedShift) {
+      this.loadCurrentActivity(selectedShift.id);
     }
   }
 
@@ -121,44 +150,71 @@ class AppController {
       const userId = this.apiService.getUserIdFromToken(this.state.getToken());
       if (!userId) throw new Error('Invalid token');
       
+      // Load employee data
       const employee = await this.apiService.getEmployeeData(userId);
       this.state.setEmployeeData(employee);
       
-      this.uiManager.populateProjectDropdown(this.state.getProjects(), this.state.selectedProjectId);
-      this.uiManager.populateTaskDropdown(this.state.getFilteredTasks(), this.state.selectedTaskId);
+      // Load today's scheduled shifts
+      await this.loadTodayShifts();
+      
       this.uiManager.updateTimerControls(this.state);
       
-      await this.loadTimeEntries();
+      await this.loadShifts();
     } catch (error) {
+      console.error('Failed to load employee data:', error);
       this.uiManager.showMessage('timerError', 'Failed to load employee data.');
     }
   }
 
-  async loadTimeEntries() {
+  async loadTodayShifts() {
+    try {
+      const shifts = await this.apiService.getTodayShifts();
+      this.state.setShifts(shifts);
+      
+      // Populate shift dropdown if it exists
+      if (this.uiManager.elements.shiftSelect) {
+        this.uiManager.populateShiftDropdown(shifts, this.state.currentShift?.id);
+      }
+      
+      // Auto-select first shift if available
+      if (shifts.length > 0 && !this.state.currentShift) {
+        this.state.setCurrentShift(shifts[0]);
+        this.uiManager.updateShiftInfo(shifts[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load today\'s shifts:', error);
+      this.uiManager.showMessage('timerError', 'Failed to load today\'s shifts.');
+    }
+  }
+
+  async loadCurrentActivity(shiftId) {
+    try {
+      const userId = this.apiService.getUserIdFromToken(this.state.getToken());
+      if (!userId || !shiftId) return;
+      
+      const currentActivity = await this.apiService.getCurrentActivity(userId, shiftId);
+      this.state.setCurrentActivity(currentActivity);
+      
+      if (currentActivity) {
+        this.uiManager.updateActivityInfo(currentActivity);
+        this.timerManager.startTimer(); // Resume timer for active activity
+      }
+    } catch (error) {
+      console.error('Failed to load current activity:', error);
+    }
+  }
+
+  async loadShifts() {
     try {
       const userId = this.apiService.getUserIdFromToken(this.state.getToken());
       if (!userId) return;
       
-      const timeEntries = await this.apiService.getTimeEntries(userId);
-      this.state.setTimeEntries(timeEntries);
-      this.uiManager.renderTimeEntryHistory(timeEntries);
+      const shifts = await this.apiService.getShifts(userId, { limit: 20 });
+      this.state.setShifts(shifts);
+      this.uiManager.renderShiftHistory(shifts);
     } catch (error) {
-      console.error('Failed to load time entries:', error);
+      console.error('Failed to load shifts:', error);
     }
-  }
-
-  // Selection handlers
-  handleProjectChange() {
-    const projectId = this.uiManager.elements.projectSelect.value;
-    this.state.setSelectedProject(projectId);
-    this.uiManager.populateTaskDropdown(this.state.getFilteredTasks(), null);
-    this.uiManager.updateTimerControls(this.state);
-  }
-
-  handleTaskChange() {
-    const taskId = this.uiManager.elements.taskSelect.value;
-    this.state.setSelectedTask(taskId);
-    this.uiManager.updateTimerControls(this.state);
   }
 
   // Logout

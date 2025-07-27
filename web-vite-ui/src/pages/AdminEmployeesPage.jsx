@@ -1,40 +1,123 @@
 import React, { useEffect, useState } from 'react';
-import api from '../api';
+import { listEmployees, createEmployee, deactivateEmployee } from '../repository/employeeRepository';
+import { getTeamSuggestions } from '../repository/teamRepository';
+import { getSharedSettings } from '../repository/sharedSettingsRepository';
 import Layout from '../components/Layout';
 import { Card, Badge, Button, Text, Heading, Flex, Box, Separator, Container } from '@radix-ui/themes';
-import { PersonIcon, EnvelopeClosedIcon, CheckCircledIcon, ClockIcon, CrossCircledIcon } from '@radix-ui/react-icons';
+import { PersonIcon, EnvelopeClosedIcon, CheckCircledIcon, ClockIcon, CrossCircledIcon, GearIcon } from '@radix-ui/react-icons';
 
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState([]);
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [teamId, setTeamId] = useState('');
+  const [sharedSettingsId, setSharedSettingsId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deactivatingId, setDeactivatingId] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [sharedSettings, setSharedSettings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
   const fetchEmployees = async () => {
     try {
-      const res = await api.get('/employees');
-      setEmployees(res.data);
+      const res = await listEmployees();
+      setEmployees(res);
     } catch (err) {
-      setError('Failed to load employees. Make sure you are logged in as admin and backend supports GET /employees.');
+      setError('Failed to load employees. Make sure you are logged in as admin and backend supports GET /employee.');
+    }
+  };
+
+  const fetchTeams = async () => {
+    try {
+      const res = await getTeamSuggestions();
+      setTeams(res);
+    } catch (err) {
+      console.error('Failed to load teams:', err);
+      setTeams([]);
+    }
+  };
+
+  const fetchSharedSettings = async () => {
+    try {
+      const res = await getSharedSettings();
+      setSharedSettings(res);
+    } catch (err) {
+      console.error('Failed to load shared settings:', err);
+      setSharedSettings([]);
     }
   };
 
   useEffect(() => {
-    fetchEmployees();
+    const loadData = async () => {
+      setLoadingData(true);
+      try {
+        await Promise.all([
+          fetchEmployees(),
+          fetchTeams(),
+          fetchSharedSettings()
+        ]);
+      } catch (err) {
+        console.error('Error loading data:', err);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    
+    loadData();
   }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
+
+    // Validate required fields
+    if (!name.trim()) {
+      setError('Employee name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError('Employee email is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!teamId.trim()) {
+      setError('Team selection is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!sharedSettingsId.trim()) {
+      setError('Shared settings selection is required');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await api.post('/employees', { email });
+      const employeeData = {
+        name: name.trim(),
+        email: email.trim(),
+        teamId: teamId.trim(),
+        sharedSettingsId: sharedSettingsId.trim()
+      };
+      
+      await createEmployee(employeeData);
       setSuccess('Employee added and activation email sent');
       setEmail('');
+      setName('');
+      setTeamId('');
+      setSharedSettingsId('');
       fetchEmployees();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add employee');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,7 +131,7 @@ export default function AdminEmployeesPage() {
     setSuccess('');
 
     try {
-      await api.patch(`/employees/${employeeId}/deactivate`);
+      await deactivateEmployee(employeeId);
       setSuccess('Employee deactivated successfully');
       fetchEmployees();
     } catch (err) {
@@ -64,6 +147,33 @@ export default function AdminEmployeesPage() {
     }
   };
 
+  // Helper function to determine employee status
+  const getEmployeeStatus = (employee) => {
+    if (employee.deactivated) {
+      return { status: 'inactive', label: 'Deactivated', color: 'red' };
+    }
+    if (employee.invited && !employee.credentials) {
+      return { status: 'pending', label: 'Pending Activation', color: 'yellow' };
+    }
+    return { status: 'active', label: 'Active', color: 'green' };
+  };
+
+  // Filter active employees for stats
+  const activeEmployees = employees.filter(emp => !emp.deactivated);
+  const pendingEmployees = employees.filter(emp => emp.invited && !emp.credentials && !emp.deactivated);
+
+  if (loadingData) {
+    return (
+      <Layout>
+        <Container size="4" className="py-8">
+          <div className="flex items-center justify-center h-64">
+            <Text size="3" className="text-gray-600">Loading...</Text>
+          </div>
+        </Container>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <Container size="4" className="py-8">
@@ -76,8 +186,19 @@ export default function AdminEmployeesPage() {
         {/* Add Employee Form */}
         <Card className="mb-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-0">
           <Heading size="4" className="mb-4 text-gray-900">Add New Employee</Heading>
-          <form onSubmit={handleAdd} className="flex gap-3">
-            <div className="flex-1 relative">
+          <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <PersonIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Enter employee name"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="relative">
               <EnvelopeClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
@@ -88,13 +209,46 @@ export default function AdminEmployeesPage() {
                 required
               />
             </div>
-            <Button 
-              type="submit" 
-              size="3"
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              Add Employee
-            </Button>
+            <div className="relative">
+              <PersonIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <select
+                value={teamId}
+                onChange={e => setTeamId(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              >
+                <option value="">Select a team</option>
+                {teams.map(team => (
+                  <option key={team} value={team}>{team}</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <GearIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <select
+                value={sharedSettingsId}
+                onChange={e => setSharedSettingsId(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+              >
+                <option value="">Select settings</option>
+                {sharedSettings.map(setting => (
+                  <option key={setting.id} value={setting.id}>
+                    {setting.name} ({setting.type})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2 lg:col-span-4">
+              <Button 
+                type="submit" 
+                size="3"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
+              >
+                {loading ? 'Adding Employee...' : 'Add Employee'}
+              </Button>
+            </div>
           </form>
           
           {error && (
@@ -131,7 +285,7 @@ export default function AdminEmployeesPage() {
               <Box>
                 <Text size="2" className="text-green-600 font-medium">Active</Text>
                 <Heading size="4" className="text-green-900">
-                  {employees.filter(emp => emp.status === 'active').length}
+                  {activeEmployees.length}
                 </Heading>
               </Box>
             </Flex>
@@ -145,7 +299,7 @@ export default function AdminEmployeesPage() {
               <Box>
                 <Text size="2" className="text-yellow-600 font-medium">Pending</Text>
                 <Heading size="4" className="text-yellow-900">
-                  {employees.filter(emp => emp.status === 'pending').length}
+                  {pendingEmployees.length}
                 </Heading>
               </Box>
             </Flex>
@@ -154,114 +308,120 @@ export default function AdminEmployeesPage() {
 
         {/* Employees Grid */}
         <div className="grid gap-6">
-          {employees.map(emp => (
-            <Card key={emp.id} className="p-6 hover:shadow-lg transition-all duration-200 border border-gray-100">
-              {/* Employee Header */}
-              <Flex justify="between" align="start" className="mb-4">
-                <Flex align="center" gap="3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <PersonIcon className="text-white" />
-                  </div>
-                  <Box>
-                    <Heading size="4" className="text-gray-900 mb-1">
-                      {emp.name || 'Unnamed Employee'}
-                    </Heading>
-                    <Flex align="center" gap="2">
-                      <EnvelopeClosedIcon className="text-gray-400" />
-                      <Text size="2" className="text-gray-500">{emp.email}</Text>
-                    </Flex>
-                  </Box>
-                </Flex>
-                <Flex align="center" gap="3">
-                  <Badge 
-                    size="2"
-                    color={emp.status === 'active' ? 'green' : 'yellow'} 
-                    variant="soft"
-                    className="px-3 py-1"
-                  >
-                    {emp.status === 'active' ? 'Active' : 'Pending Activation'}
-                  </Badge>
-                  
-                  {emp.status === 'active' && (
-                    <Button
+          {employees.map(emp => {
+            const employeeStatus = getEmployeeStatus(emp);
+            return (
+              <Card key={emp.id} className="p-6 hover:shadow-lg transition-all duration-200 border border-gray-100">
+                {/* Employee Header */}
+                <Flex justify="between" align="start" className="mb-4">
+                  <Flex align="center" gap="3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <PersonIcon className="text-white" />
+                    </div>
+                    <Box>
+                      <Heading size="4" className="text-gray-900 mb-1">
+                        {emp.name || 'Unnamed Employee'}
+                      </Heading>
+                      <Flex align="center" gap="2">
+                        <EnvelopeClosedIcon className="text-gray-400" />
+                        <Text size="2" className="text-gray-500">{emp.email}</Text>
+                      </Flex>
+                      {emp.teamId && (
+                        <Text size="1" className="text-gray-400 mt-1">Team: {emp.teamId}</Text>
+                      )}
+                    </Box>
+                  </Flex>
+                  <Flex align="center" gap="3">
+                    <Badge 
                       size="2"
-                      onClick={() => handleDeactivate(emp.id, emp.name)}
-                      disabled={deactivatingId === emp.id}
-                      className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                      color={employeeStatus.color} 
+                      variant="soft"
+                      className="px-3 py-1"
                     >
-                      <CrossCircledIcon />
-                      {deactivatingId === emp.id ? 'Deactivating...' : 'Deactivate'}
-                    </Button>
-                  )}
+                      {employeeStatus.label}
+                    </Badge>
+                    
+                    {!emp.deactivated && (
+                      <Button
+                        size="2"
+                        onClick={() => handleDeactivate(emp.id, emp.name)}
+                        disabled={deactivatingId === emp.id}
+                        className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+                      >
+                        <CrossCircledIcon />
+                        {deactivatingId === emp.id ? 'Deactivating...' : 'Deactivate'}
+                      </Button>
+                    )}
+                  </Flex>
                 </Flex>
-              </Flex>
 
-              <Separator className="my-4" />
-              
-              {/* Projects and Tasks */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Projects Section */}
-                <Box>
-                  <Flex align="center" gap="2" className="mb-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <Text size="2" weight="bold" className="text-gray-700 uppercase tracking-wide">
-                      Projects ({emp.projects?.length || 0})
-                    </Text>
-                  </Flex>
-                  
-                  {emp.projects && emp.projects.length > 0 ? (
-                    <div className="space-y-2">
-                      {emp.projects.map(project => (
-                        <div key={project.id} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <Text size="2" weight="medium" className="text-blue-900 mb-1">
-                            {project.name}
-                          </Text>
-                          {project.description && (
-                            <Text size="1" className="text-blue-700 line-clamp-2">
-                              {project.description}
-                            </Text>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <Text size="2" className="text-gray-500 text-center">No projects assigned</Text>
-                    </div>
-                  )}
-                </Box>
+                <Separator className="my-4" />
                 
-                {/* Tasks Section */}
-                <Box>
-                  <Flex align="center" gap="2" className="mb-3">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <Text size="2" weight="bold" className="text-gray-700 uppercase tracking-wide">
-                      Tasks ({emp.tasks?.length || 0})
-                    </Text>
-                  </Flex>
+                {/* Projects and Tasks */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Projects Section */}
+                  <Box>
+                    <Flex align="center" gap="2" className="mb-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <Text size="2" weight="bold" className="text-gray-700 uppercase tracking-wide">
+                        Projects ({emp.projects?.length || 0})
+                      </Text>
+                    </Flex>
+                    
+                    {emp.projects && emp.projects.length > 0 ? (
+                      <div className="space-y-2">
+                        {emp.projects.map(project => (
+                          <div key={project.id} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <Text size="2" weight="medium" className="text-blue-900 mb-1">
+                              {project.name}
+                            </Text>
+                            {project.description && (
+                              <Text size="1" className="text-blue-700 line-clamp-2">
+                                {project.description}
+                              </Text>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <Text size="2" className="text-gray-500 text-center">No projects assigned</Text>
+                      </div>
+                    )}
+                  </Box>
                   
-                  {emp.tasks && emp.tasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {emp.tasks.map(task => (
-                        <div key={task.id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                          <Text size="2" weight="medium" className="text-purple-900 mb-1">
-                            {task.name}
-                          </Text>
-                          <Text size="1" className="text-purple-700">
-                            Project: {task.project?.name}
-                          </Text>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <Text size="2" className="text-gray-500 text-center">No tasks assigned</Text>
-                    </div>
-                  )}
-                </Box>
-              </div>
-            </Card>
-          ))}
+                  {/* Tasks Section */}
+                  <Box>
+                    <Flex align="center" gap="2" className="mb-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <Text size="2" weight="bold" className="text-gray-700 uppercase tracking-wide">
+                        Tasks ({emp.tasks?.length || 0})
+                      </Text>
+                    </Flex>
+                    
+                    {emp.tasks && emp.tasks.length > 0 ? (
+                      <div className="space-y-2">
+                        {emp.tasks.map(task => (
+                          <div key={task.id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
+                            <Text size="2" weight="medium" className="text-purple-900 mb-1">
+                              {task.name}
+                            </Text>
+                            <Text size="1" className="text-purple-700">
+                              Project: {task.project?.name}
+                            </Text>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <Text size="2" className="text-gray-500 text-center">No tasks assigned</Text>
+                      </div>
+                    )}
+                  </Box>
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Empty State */}

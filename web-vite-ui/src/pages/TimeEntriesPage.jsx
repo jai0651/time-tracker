@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import { listTimeEntries } from '../repository/timeEntryRepository';
+import { listTimeEntries, createTimeEntry } from '../repository/timeEntryRepository';
+import { listProjects } from '../repository/projectRepository';
+import { listTasks } from '../repository/taskRepository';
+import { listEmployees } from '../repository/employeeRepository';
 import { jwtDecode } from 'jwt-decode';
-import api from '../api';
 import { Card, Badge, Button, Text, Heading, Flex, Box, Separator, Container, Table } from '@radix-ui/themes';
-import { ClockIcon, PersonIcon, FileIcon, CheckCircledIcon, CalendarIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { ClockIcon, PersonIcon, FileIcon, CheckCircledIcon, CalendarIcon, MagnifyingGlassIcon, PlusIcon } from '@radix-ui/react-icons';
 
 function getUserFromToken() {
   const token = localStorage.getItem('token');
@@ -21,9 +23,18 @@ export default function TimeEntriesPage() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [filters, setFilters] = useState({ employeeId: '', projectId: '', startDate: '', endDate: '' });
   const [employees, setEmployees] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({
+    startTs: '',
+    endTs: '',
+    projectId: '',
+    taskId: ''
+  });
 
   const fetchEntries = async () => {
     setLoading(true);
@@ -45,8 +56,8 @@ export default function TimeEntriesPage() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await api.get('/employees');
-      setEmployees(res.data);
+      const res = await listEmployees();
+      setEmployees(res);
     } catch {
       setEmployees([]);
     }
@@ -54,18 +65,28 @@ export default function TimeEntriesPage() {
 
   const fetchProjects = async () => {
     try {
-      const res = await api.get('/projects');
-      setProjects(res.data);
+      const data = await listProjects();
+      setProjects(data);
     } catch {
       setProjects([]);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const data = await listTasks();
+      setTasks(data);
+    } catch {
+      setTasks([]);
     }
   };
 
   useEffect(() => {
     if (user.role === 'admin') {
       fetchEmployees();
-      fetchProjects();
     }
+    fetchProjects();
+    fetchTasks();
     fetchEntries();
   }, []);
 
@@ -76,6 +97,29 @@ export default function TimeEntriesPage() {
   const handleFilterSubmit = (e) => {
     e.preventDefault();
     fetchEntries();
+  };
+
+  const handleFormChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createTimeEntry(form);
+      setSuccess('Time entry created successfully!');
+      setShowForm(false);
+      setForm({
+        startTs: '',
+        endTs: '',
+        projectId: '',
+        taskId: ''
+      });
+      fetchEntries();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError('Failed to create time entry. Please try again.');
+    }
   };
 
   const formatDuration = (startTs, endTs) => {
@@ -119,6 +163,19 @@ export default function TimeEntriesPage() {
         <div className="mb-8">
           <Heading size="8" className="text-gray-900 mb-2">Time Tracking</Heading>
           <Text size="3" className="text-gray-600">Monitor and analyze your team's time entries</Text>
+        </div>
+
+        {/* Add Time Entry Button */}
+        <div className="mb-8 flex justify-between items-center">
+          <div></div>
+          <Button 
+            onClick={() => setShowForm(true)}
+            size="3"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <PlusIcon className="mr-2" />
+            Add Time Entry
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -253,6 +310,12 @@ export default function TimeEntriesPage() {
           </Card>
         )}
 
+        {success && (
+          <Card className="mb-6 p-4 bg-green-50 border border-green-200">
+            <Text size="2" className="text-green-700">{success}</Text>
+          </Card>
+        )}
+
         {/* Time Entries Table */}
         <Card className="p-6">
           <Heading size="4" className="text-gray-900 mb-4">Time Entries</Heading>
@@ -358,6 +421,92 @@ export default function TimeEntriesPage() {
             </div>
           )}
         </Card>
+
+        {/* Add Time Entry Dialog */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <Text size="4" weight="bold">Add Time Entry</Text>
+                <button 
+                  onClick={() => setShowForm(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Text size="2" weight="medium" className="text-gray-700 mb-2">Start Time</Text>
+                  <input
+                    type="datetime-local"
+                    name="startTs"
+                    value={form.startTs}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <Text size="2" weight="medium" className="text-gray-700 mb-2">End Time</Text>
+                  <input
+                    type="datetime-local"
+                    name="endTs"
+                    value={form.endTs}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <Text size="2" weight="medium" className="text-gray-700 mb-2">Project</Text>
+                  <select
+                    name="projectId"
+                    value={form.projectId}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Select a project</option>
+                    {projects.map(proj => (
+                      <option key={proj.id} value={proj.id}>{proj.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Text size="2" weight="medium" className="text-gray-700 mb-2">Task</Text>
+                  <select
+                    name="taskId"
+                    value={form.taskId}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="">Select a task</option>
+                    {tasks.map(task => (
+                      <option key={task.id} value={task.id}>{task.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => setShowForm(false)}
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Create Entry
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </Container>
     </Layout>
   );

@@ -1,16 +1,6 @@
 import { prisma } from '../prisma/prismaClient.js';
 import crypto from 'crypto';
 
-export async function createEmployee(email, activationToken, status) {
-  return prisma.employee.create({
-    data: {
-      email,
-      activationToken,
-      status,
-      role: 'employee'
-    }
-  });
-}
 
 export async function findEmployeeByEmail(email) {
   return prisma.employee.findUnique({ where: { email } });
@@ -72,6 +62,43 @@ export async function findEmployeeById(id) {
     }
   });
 }
+
+// export async function createEmployee(data,finalSharedSettingsId) {
+//   await prisma.employee.create({
+//     data: {
+//       name,
+//       email,
+//       teamId,
+//       sharedSettingsId: finalSharedSettingsId,
+//       organizationId,
+//       invited: new Date()
+//     },
+//     include: {
+//       projects: {
+//         select: {
+//           id: true,
+//           name: true,
+//           description: true
+//         }
+//       },
+//       tasks: {
+//         select: {
+//           id: true,
+//           name: true,
+//           description: true,
+//           status: true,
+//           priority: true,
+//           project: {
+//             select: {
+//               id: true,
+//               name: true
+//             }
+//           }
+//         }
+//       }
+//     }
+//   });
+// }
 
 export async function updateEmployeeName(id, name) {
   return prisma.employee.update({

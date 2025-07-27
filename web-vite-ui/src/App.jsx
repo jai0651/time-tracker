@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import ProjectsPage from './pages/ProjectsPage';
 import TasksPage from './pages/TasksPage';
 import TimeEntriesPage from './pages/TimeEntriesPage';
+import ShiftsPage from './pages/ShiftsPage';
 import { jwtDecode } from 'jwt-decode';
 
 function getUserFromToken() {
@@ -28,7 +29,7 @@ function RequireAuth({ children }) {
 function RequireAdmin({ children }) {
   const user = getUserFromToken();
   const location = useLocation();
-  if (!user || user.role !== 'admin') {
+  if (!user || user.email !== 'jai@admin') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return children ? children : <Outlet />;
@@ -43,9 +44,10 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/" element={<HomePage />} />
         <Route element={<RequireAdmin />}>
-          <Route path="/admin/employees" element={<AdminEmployeesPage />} />
-          <Route path="/admin/projects" element={<ProjectsPage />} />
-          <Route path="/admin/tasks" element={<TasksPage />} />
+          <Route path="/admin/employee" element={<AdminEmployeesPage />} />
+          <Route path="/admin/project" element={<ProjectsPage />} />
+          <Route path="/admin/task" element={<TasksPage />} />
+          <Route path="/admin/shift" element={<ShiftsPage />} />
         </Route>
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<DashboardPage />} />

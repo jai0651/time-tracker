@@ -4,15 +4,39 @@ import bcrypt from 'bcryptjs';
 async function main() {
   // Admin
   const adminPassword = await bcrypt.hash('jais', 10);
+  
+  const sharedSettings = await prisma.sharedSettings.upsert({
+    where: { id: 'cmdkmmlz80000i2oeghzin7qp' },
+    update: {}, // Leave as-is if you're only inserting
+    create: {
+      id: 'cmdkmmlz80000i2oeghzin7qp',
+      name: 'test-settings',
+      type: 'personal', // or 'office'
+      settings: {}, // empty JSON object or your actual config
+      organizationId: 'default-org',
+      default: false, // optional; default is false
+    },
+  });
+
   const admin = await prisma.employee.upsert({
     where: { email: 'jai@admin' },
     update: {},
     create: {
       email: 'jai@admin',
-      hashedPassword: adminPassword,
-      status: 'active',
-      role: 'admin',
       name: 'Admin Jai',
+      teamId: 'admin-team',
+      organizationId: 'default-org',
+      sharedSettingsId: sharedSettings.id,
+    },
+  });
+
+  // Create credentials for admin
+  await prisma.credentials.upsert({
+    where: { employeeId: admin.id },
+    update: { passwordHash: adminPassword },
+    create: {
+      employeeId: admin.id,
+      passwordHash: adminPassword,
     },
   });
 
@@ -24,21 +48,42 @@ async function main() {
     update: {},
     create: {
       email: 'emp1@company.com',
-      hashedPassword: emp1Password,
-      status: 'active',
-      role: 'employee',
       name: 'Employee One',
+      teamId: 'default-team',
+      organizationId: 'default-org',
+      sharedSettingsId: sharedSettings.id,
     },
   });
+
+  // Create credentials for emp1
+  await prisma.credentials.upsert({
+    where: { employeeId: emp1.id },
+    update: { passwordHash: emp1Password },
+    create: {
+      employeeId: emp1.id,
+      passwordHash: emp1Password,
+    },
+  });
+
   const emp2 = await prisma.employee.upsert({
     where: { email: 'emp2@company.com' },
     update: {},
     create: {
       email: 'emp2@company.com',
-      hashedPassword: emp2Password,
-      status: 'active',
-      role: 'employee',
       name: 'Employee Two',
+      teamId: 'default-team',
+      organizationId: 'default-org',
+      sharedSettingsId: sharedSettings.id,
+    },
+  });
+
+  // Create credentials for emp2
+  await prisma.credentials.upsert({
+    where: { employeeId: emp2.id },
+    update: { passwordHash: emp2Password },
+    create: {
+      employeeId: emp2.id,
+      passwordHash: emp2Password,
     },
   });
 
@@ -52,6 +97,10 @@ async function main() {
         name: 'Test Project',
         description: 'Seeded project for testing',
         employees: { connect: [{ id: emp1.id }, { id: emp2.id }] },
+        organizationId: 'default-org',
+        teams: ['default-team'],
+        statuses: ['pending', 'in-progress', 'completed'],
+        priorities: ['low', 'medium', 'high'],
       },
     });
   }

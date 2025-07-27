@@ -23,7 +23,7 @@ export default function DashboardPage() {
     console.log('DashboardPage user:', user);
     if (user && user.userId) {
       setLoading(true);
-      api.get(`/employees/${user.userId}`)
+      api.get(`/employee/${user.userId}`)
         .then(res => {
           console.log('Employee API response:', res.data);
           setEmployee(res.data);

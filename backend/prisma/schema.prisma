@@ -9,44 +9,137 @@ datasource db {
 }
 
 model Employee {
-  id               Int         @id @default(autoincrement())
-  email            String      @unique
-  hashedPassword   String?
-  activationToken  String?
-  status           String      // "pending" or "active"
-  timeEntries      TimeEntry[]
-  role             String      @default("employee")
-  name             String?
+  id               String      @id @default(cuid())
+  name             String
+  email            String?     @unique
+  teamId           String
+  sharedSettingsId String?
+  organizationId   String
+  invited          DateTime    @default(now())
+  deactivated      DateTime?
   projects         Project[]   @relation("ProjectEmployees")
   tasks            Task[]      @relation("TaskEmployees")
+  shifts           Shift[]
+  activities       Activity[]
+  timeEntries      TimeEntry[] // Legacy relation
+  sharedSettings   SharedSettings? @relation(fields: [sharedSettingsId], references: [id])
+  
+  // New relations for complete onboarding flow
+  verificationTokens VerificationToken[]
+  credentials       Credentials?
+
 }
 
-model TimeEntry {
-  id         Int      @id @default(autoincrement())
-  employee   Employee @relation(fields: [employeeId], references: [id])
-  employeeId Int
-  startTs    DateTime
-  endTs      DateTime
-  projectId  Int?
-  project    Project? @relation("ProjectTimeEntries", fields: [projectId], references: [id])
-  taskId     Int?
-  task       Task?    @relation("TaskTimeEntries", fields: [taskId], references: [id])
+model SharedSettings {
+  id             String   @id @default(cuid())
+  name           String
+  type           String   // "personal" or "office"
+  settings       Json     // JSON configuration payload
+  organizationId String
+  default        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  employees      Employee[]
 }
 
 model Project {
-  id          Int         @id @default(autoincrement())
+  id          String   @id @default(cuid())
   name        String
   description String?
-  employees   Employee[]  @relation("ProjectEmployees")
+  employees   Employee[] @relation("ProjectEmployees")
   tasks       Task[]
-  timeEntries TimeEntry[] @relation("ProjectTimeEntries")
+  teams       String[] // Array of team IDs
+  billable    Boolean  @default(false)
+  statuses    String[] // Array of status options
+  priorities  String[] // Array of priority options
+  organizationId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  timeEntries TimeEntry[] @relation("ProjectTimeEntries") 
+  shifts      Shift[]
+  // Legacy relation
 }
 
 model Task {
-  id         Int        @id @default(autoincrement())
-  name       String
-  projectId  Int
-  project    Project    @relation(fields: [projectId], references: [id])
-  employees  Employee[] @relation("TaskEmployees")
-  timeEntries TimeEntry[] @relation("TaskTimeEntries")
+  id          String   @id @default(cuid())
+  name        String
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description String?
+  employees   Employee[] @relation("TaskEmployees")
+  status      String?
+  priority    String?
+  billable    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  timeEntries TimeEntry[] @relation("TaskTimeEntries") // Legacy relation
+  shifts      Shift[]
+}
+
+model Shift {
+  id             String   @id @default(cuid())
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  teamId         String
+  taskId         String?
+  task           Task?    @relation(fields: [taskId], references: [id])
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
+  token          String?
+  type           String?
+  start          DateTime @default(now())
+  end            DateTime?
+  duration       Int?     // Duration in milliseconds
+  timezoneOffset Int      // Timezone offset in minutes
+  activities     Activity[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Activity {
+  id              String   @id @default(cuid())
+  shiftId         String
+  shift           Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  start           DateTime
+  end             DateTime?
+  duration        Int?     // Duration in milliseconds
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Legacy models for backward compatibility
+model TimeEntry {
+  id         String   @id @default(cuid())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  startTs    DateTime
+  endTs      DateTime
+  project    Project? @relation("ProjectTimeEntries", fields: [projectId], references: [id])
+  projectId  String?
+  task       Task?    @relation("TaskTimeEntries", fields: [taskId], references: [id])
+  taskId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
+}
+
+// New models for complete onboarding flow
+model VerificationToken {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Credentials {
+  id           String   @id @default(cuid())
+  employeeId   String   @unique
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { listTasks, createTask, updateTask, deleteTask, assignEmployees, removeEmployee } from '../repository/taskRepository';
-import { listEmployees } from '../api';
 import { listProjects } from '../repository/projectRepository';
+import { listEmployees } from '../repository/employeeRepository';
 import { Card, Badge, Button, Text, Heading, Flex, Box, Separator, Container, Dialog, Checkbox, Select } from '@radix-ui/themes';
 import { CheckCircledIcon, PlusIcon, Pencil1Icon, TrashIcon, PersonIcon, FileIcon } from '@radix-ui/react-icons';
 import api from '../api';
+
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
@@ -13,7 +14,14 @@ export default function TasksPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', projectId: '' });
+  const [form, setForm] = useState({ 
+    name: '', 
+    projectId: '', 
+    description: '',
+    status: 'pending',
+    priority: 'medium',
+    billable: false
+  });
   const [editingId, setEditingId] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [assigningTask, setAssigningTask] = useState(null);
@@ -66,7 +74,12 @@ export default function TasksPage() {
   }, [assigningTask]);
 
   const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setForm({ ...form, [name]: checked });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -82,7 +95,14 @@ export default function TasksPage() {
         setSuccess('Task created successfully!');
       }
       setShowForm(false);
-      setForm({ name: '', projectId: '' });
+      setForm({ 
+        name: '', 
+        projectId: '', 
+        description: '',
+        status: 'pending',
+        priority: 'medium',
+        billable: false
+      });
       setEditingId(null);
       setError(''); // Clear any previous errors
       fetchTasks();
@@ -100,7 +120,14 @@ export default function TasksPage() {
     e.stopPropagation();
     console.log('Edit button clicked for task:', task);
     console.log('Setting showForm to true, editingId to:', task.id);
-    setForm({ name: task.name, projectId: task.projectId });
+    setForm({ 
+      name: task.name, 
+      projectId: task.projectId,
+      description: task.description || '',
+      status: task.status || 'pending',
+      priority: task.priority || 'medium',
+      billable: task.billable || false
+    });
     setEditingId(task.id);
     setShowForm(true);
     console.log('State should be updated now');
@@ -126,7 +153,7 @@ export default function TasksPage() {
     console.log('Setting assigningTask to:', task);
     try {
       // Fetch the project with employees to ensure we have the latest data
-      const projectRes = await api.get(`/projects/${task.projectId}`);
+      const projectRes = await api.get(`/project/${task.projectId}`);
       const projectWithEmployees = projectRes.data;
       
       setAssigningTask(task);
@@ -193,6 +220,24 @@ export default function TasksPage() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'green';
+      case 'in_progress': return 'blue';
+      case 'pending': return 'yellow';
+      default: return 'gray';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return 'red';
+      case 'medium': return 'yellow';
+      case 'low': return 'green';
+      default: return 'gray';
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -221,7 +266,18 @@ export default function TasksPage() {
         <div className="mb-8 flex justify-between items-center">
           <div></div>
           <Button 
-            onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: '', projectId: '' }); }}
+            onClick={() => { 
+              setShowForm(true); 
+              setEditingId(null); 
+              setForm({ 
+                name: '', 
+                projectId: '', 
+                description: '',
+                status: 'pending',
+                priority: 'medium',
+                billable: false
+              }); 
+            }}
             size="3"
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
           >
@@ -253,6 +309,20 @@ export default function TasksPage() {
                   <Text size="2" className="text-gray-600">
                     Project: {task.project?.name || 'Unknown Project'}
                   </Text>
+                  {task.description && (
+                    <Text size="2" className="text-gray-600 mt-1">{task.description}</Text>
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="soft" color={getStatusColor(task.status)}>
+                      {task.status?.replace('_', ' ') || 'pending'}
+                    </Badge>
+                    <Badge variant="soft" color={getPriorityColor(task.priority)}>
+                      {task.priority || 'medium'}
+                    </Badge>
+                    {task.billable && (
+                      <Badge variant="soft" color="green">Billable</Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button 
@@ -376,6 +446,55 @@ export default function TasksPage() {
                       <option key={proj.id} value={proj.id}>{proj.name}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <Text size="2" weight="medium" className="text-gray-700 mb-2">Description</Text>
+                  <textarea
+                    name="description"
+                    placeholder="Enter task description"
+                    value={form.description}
+                    onChange={handleFormChange}
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Text size="2" weight="medium" className="text-gray-700 mb-2">Status</Text>
+                    <select
+                      name="status"
+                      value={form.status}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Text size="2" weight="medium" className="text-gray-700 mb-2">Priority</Text>
+                    <select
+                      name="priority"
+                      value={form.priority}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="billable"
+                    checked={form.billable}
+                    onChange={handleFormChange}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <Text size="2" weight="medium" className="text-gray-700">Billable Task</Text>
                 </div>
                 <div className="flex gap-3 justify-end pt-4">
                   <Button 
