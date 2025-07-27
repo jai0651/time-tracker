@@ -483,3 +483,159 @@ body {
         width: 200px;
     }
 } 
+
+/* Shifts and Activities Styles */
+.shifts-card, .history-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.shifts-list, .activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.shift-card, .activity-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.shift-card:hover, .activity-card:hover {
+    border-color: #cbd5e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shift-header, .activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.shift-header h3, .activity-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.status-badge.scheduled {
+    background: #bee3f8;
+    color: #2a4365;
+}
+
+.status-badge.ended, .status-badge.completed {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.shift-details, .activity-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-item .label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+}
+
+.detail-item .value {
+    color: #2d3748;
+    font-size: 0.875rem;
+}
+
+.shift-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.shift-selection-section {
+    margin-bottom: 24px;
+}
+
+.shift-info {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.activity-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    justify-content: center;
+}
+
+.save-activity-section {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.activity-info {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #718096;
+    font-size: 1rem;
+    padding: 40px 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .shift-details, .activity-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .shift-header, .activity-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .shift-actions {
+        justify-content: flex-start;
+    }
+    
+    .activity-controls {
+        flex-direction: column;
+    }
+} 

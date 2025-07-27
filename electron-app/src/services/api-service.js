@@ -10,27 +10,30 @@ class ApiService {
   async createApiClient() {
     if (!this.apiClient) {
       const baseURL = await this.getApiUrl();
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      
-      // Add Authorization header if token exists
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
-      }
       
       this.apiClient = axios.create({
         baseURL: `${baseURL}/api/v1`,
-        headers
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      // Add request interceptor for token
+      // Add request interceptor to always include the token
       this.apiClient.interceptors.request.use((config) => {
         if (this.authToken) {
           config.headers.Authorization = `Bearer ${this.authToken}`;
         }
         return config;
       });
+
+      // Add response interceptor for error handling
+      this.apiClient.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          console.error('API Error:', error.response?.data || error.message);
+          return Promise.reject(error);
+        }
+      );
     }
     return this.apiClient;
   }
@@ -47,6 +50,7 @@ class ApiService {
 
   resetApiClient() {
     this.apiClient = null;
+    this.authToken = null;
   }
 
   // Authentication
@@ -58,35 +62,25 @@ class ApiService {
 
   // Employee data
   async getEmployeeData(userId) {
-    const api = await this.createApiClient();
-    console.log('Making API call with token:', this.authToken ? 'Present' : 'Missing');
-    const response = await api.get(`/employee/${userId}`);
-    return response.data;
+    return this.makeApiCall('get', `/employee/${userId}`);
   }
 
   // Projects and Tasks (for viewing shift assignments)
   async getProjects() {
-    const api = await this.createApiClient();
-    const response = await api.get('/project');
-    return response.data;
+    return this.makeApiCall('get', '/project');
   }
 
   async getTasks(projectId = null) {
-    const api = await this.createApiClient();
-    const params = projectId ? `?projectId=${projectId}` : '';
-    const response = await api.get(`/task${params}`);
-    return response.data;
+    const url = projectId ? `/task?projectId=${projectId}` : '/task';
+    return this.makeApiCall('get', url);
   }
 
   // Shifts - View scheduled shifts (employees don't create shifts)
   async getTodayShifts() {
-    const api = await this.createApiClient();
-    const response = await api.get('/shift/today');
-    return response.data;
+    return this.makeApiCall('get', '/shift/today');
   }
 
   async getShifts(userId, options = {}) {
-    const api = await this.createApiClient();
     const params = new URLSearchParams();
     
     if (userId) params.append('employeeId', userId);
@@ -97,36 +91,32 @@ class ApiService {
     if (options.limit) params.append('limit', options.limit);
     if (options.offset) params.append('offset', options.offset);
     
-    const response = await api.get(`/shift?${params.toString()}`);
-    return response.data;
+    const url = `/shift?${params.toString()}`;
+    return this.makeApiCall('get', url);
   }
 
   async getCurrentShift(userId) {
-    const api = await this.createApiClient();
-    const response = await api.get(`/shift?employeeId=${userId}&limit=1`);
-    const shifts = response.data;
+    const url = `/shift?employeeId=${userId}&limit=1`;
+    const shifts = await this.makeApiCall('get', url);
     return shifts.length > 0 && !shifts[0].end ? shifts[0] : null;
   }
 
   // Activities - Work activities during scheduled shifts
-  async createActivity(shiftId, description = 'Work activity') {
-    const api = await this.createApiClient();
-    const response = await api.post('/activity', { 
+  async createActivity(shiftId, description = 'Work activity', startTime = null, endTime = null) {
+    const data = { 
       shiftId, 
       description,
-      start: new Date().toISOString()
-    });
-    return response.data;
+      start: startTime || new Date().toISOString(),
+      ...(endTime && { end: endTime })
+    };
+    return this.makeApiCall('post', '/activity', data);
   }
 
   async endActivity(activityId) {
-    const api = await this.createApiClient();
-    const response = await api.patch(`/activity/${activityId}/end`);
-    return response.data;
+    return this.makeApiCall('patch', `/activity/${activityId}/end`);
   }
 
   async getActivities(userId, options = {}) {
-    const api = await this.createApiClient();
     const params = new URLSearchParams();
     
     if (userId) params.append('employeeId', userId);
@@ -138,14 +128,13 @@ class ApiService {
     if (options.limit) params.append('limit', options.limit);
     if (options.offset) params.append('offset', options.offset);
     
-    const response = await api.get(`/activity?${params.toString()}`);
-    return response.data;
+    const url = `/activity?${params.toString()}`;
+    return this.makeApiCall('get', url);
   }
 
   async getCurrentActivity(userId, shiftId) {
-    const api = await this.createApiClient();
-    const response = await api.get(`/activity?employeeId=${userId}&shiftId=${shiftId}&limit=1`);
-    const activities = response.data;
+    const url = `/activity?employeeId=${userId}&shiftId=${shiftId}&limit=1`;
+    const activities = await this.makeApiCall('get', url);
     return activities.length > 0 && !activities[0].end ? activities[0] : null;
   }
 
@@ -170,6 +159,61 @@ class ApiService {
     } catch (error) {
       console.error('Error parsing token:', error);
       return null;
+    }
+  }
+
+  // Debug method to check token status
+  debugTokenStatus() {
+    console.log('Auth Token Status:', {
+      hasToken: !!this.authToken,
+      tokenLength: this.authToken ? this.authToken.length : 0,
+      userId: this.authToken ? this.getUserIdFromToken(this.authToken) : null
+    });
+  }
+
+  // Test method to verify authentication
+  async testAuthentication() {
+    try {
+      console.log('Testing authentication...');
+      this.debugTokenStatus();
+      
+      // Try to get employee data (this requires authentication)
+      const userId = this.getUserIdFromToken(this.authToken);
+      if (!userId) {
+        console.error('No valid user ID from token');
+        return false;
+      }
+      
+      const employee = await this.getEmployeeData(userId);
+      console.log('Authentication test successful:', !!employee);
+      return true;
+    } catch (error) {
+      console.error('Authentication test failed:', error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Enhanced API call with debugging
+  async makeApiCall(method, url, data = null) {
+    const api = await this.createApiClient();
+    
+    // Debug token status before making the call
+    this.debugTokenStatus();
+    
+    try {
+      const config = {
+        method,
+        url,
+        ...(data && { data })
+      };
+      
+      console.log(`Making ${method.toUpperCase()} request to ${url}`);
+      const response = await api(config);
+      console.log(`API call successful: ${method.toUpperCase()} ${url}`);
+      return response.data;
+    } catch (error) {
+      console.error(`API call failed: ${method.toUpperCase()} ${url}`, error.response?.data || error.message);
+      throw error;
     }
   }
 }

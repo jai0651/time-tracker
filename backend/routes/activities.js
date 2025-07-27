@@ -41,7 +41,7 @@ router.post('/', auth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
     
-    if (shift.end) {
+    if (shift.end && shift.end < new Date()) {
       return res.status(400).json({ error: 'Cannot add activity to ended shift' });
     }
     

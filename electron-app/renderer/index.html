@@ -41,13 +41,17 @@
                     <h3>Time Tracker</h3>
                 </div>
                 <nav class="sidebar-nav">
-                    <button id="nav-timer" class="sidebar-link active">
+                    <button id="nav-shifts" class="sidebar-link active">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">My Shifts</span>
+                    </button>
+                    <button id="nav-timer" class="sidebar-link">
                         <span class="nav-icon">⏱️</span>
-                        <span class="nav-text">Timer</span>
+                        <span class="nav-text">Activity Timer</span>
                     </button>
                     <button id="nav-history" class="sidebar-link">
                         <span class="nav-icon">📊</span>
-                        <span class="nav-text">Time Entries</span>
+                        <span class="nav-text">Activities</span>
                     </button>
                 </nav>
                 <div class="sidebar-footer">
@@ -57,67 +61,95 @@
 
             <!-- Main Content Area -->
             <main id="main-content" class="main-content">
-                <!-- Timer Screen -->
-                <div id="timer-screen" class="screen">
+                <!-- Shifts Screen -->
+                <div id="shifts-screen" class="screen">
                     <div class="page-header">
-                        <h2>Time Tracking</h2>
-                        <p>Track your time on projects and tasks</p>
+                        <h2>My Shifts</h2>
+                        <p>View your scheduled shifts and create activities</p>
+                    </div>
+                    
+                    <div class="shifts-card">
+                        <div id="shifts-list" class="shifts-list"></div>
+                    </div>
+                </div>
+
+                <!-- Timer Screen -->
+                <div id="timer-screen" class="screen hidden">
+                    <div class="page-header">
+                        <h2>Activity Timer</h2>
+                        <p>Track your work activities within shifts</p>
                     </div>
                     
                     <div class="timer-card">
-                        <!-- Project/Task Selection -->
-                        <div class="selection-section">
+                        <!-- Shift Selection -->
+                        <div class="shift-selection-section">
                             <div class="form-group">
-                                <label for="project-select">Project</label>
-                                <select id="project-select" class="select" required>
-                                    <option value="">Select a project</option>
+                                <label for="shift-select">Selected Shift</label>
+                                <select id="shift-select" class="select" required>
+                                    <option value="">Select a shift</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label for="task-select">Task</label>
-                                <select id="task-select" class="select" required>
-                                    <option value="">Select a task</option>
-                                </select>
+                            <div id="shift-info" class="shift-info hidden">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <span class="info-label">Project</span>
+                                        <span id="shift-project" class="info-value">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Task</span>
+                                        <span id="shift-task" class="info-value">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Start Time</span>
+                                        <span id="shift-start" class="info-value">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">End Time</span>
+                                        <span id="shift-end" class="info-value">-</span>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Activity Controls -->
+                        <div class="activity-controls">
+                            <button id="start-activity-btn" class="btn btn-success btn-large" disabled>
+                                <span class="btn-icon">▶️</span>
+                                Start Timer
+                            </button>
+                            <button id="end-activity-btn" class="btn btn-danger btn-large" disabled>
+                                <span class="btn-icon">⏹️</span>
+                                End Timer
+                            </button>
                         </div>
 
                         <!-- Timer Display -->
                         <div class="timer-display">
                             <div id="timer" class="timer">00:00:00</div>
-                            <div id="status" class="status">Ready to start</div>
+                            <div id="status" class="status">Select a shift to start timer</div>
                         </div>
 
-                        <!-- Timer Controls -->
-                        <div class="timer-controls">
-                            <button id="start-btn" class="btn btn-success btn-large">
-                                <span class="btn-icon">▶️</span>
-                                Start Timer
-                            </button>
-                            <button id="stop-btn" class="btn btn-danger btn-large" disabled>
-                                <span class="btn-icon">⏹️</span>
-                                Stop Timer
-                            </button>
-                        </div>
-
-                        <!-- Session Info -->
-                        <div class="session-info">
+                        <!-- Activity Info -->
+                        <div id="activity-info" class="activity-info hidden">
                             <div class="info-grid">
                                 <div class="info-item">
-                                    <span class="info-label">Session Start</span>
-                                    <span id="session-start" class="info-value">Not started</span>
+                                    <span class="info-label">Timer Start</span>
+                                    <span id="activity-start" class="info-value">-</span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Duration</span>
-                                    <span id="session-duration" class="info-value">00:00:00</span>
+                                    <span id="activity-duration" class="info-value">00:00:00</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Save Button -->
-                        <button id="save-entry-btn" class="btn btn-primary btn-large" disabled>
-                            <span class="btn-icon">💾</span>
-                            Save Time Entry
-                        </button>
+                        <!-- Save Activity Button -->
+                        <div class="save-activity-section">
+                            <button id="save-activity-btn" class="btn btn-primary btn-large" disabled>
+                                <span class="btn-icon">💾</span>
+                                Save Activity
+                            </button>
+                        </div>
 
                         <!-- Messages -->
                         <div id="timer-error" class="error-message"></div>
@@ -125,15 +157,15 @@
                     </div>
                 </div>
 
-                <!-- Time Entries Screen -->
+                <!-- Activities History Screen -->
                 <div id="history-screen" class="screen hidden">
                     <div class="page-header">
-                        <h2>Time Entries</h2>
-                        <p>View your time tracking history</p>
+                        <h2>Activities</h2>
+                        <p>View your activity history</p>
                     </div>
                     
                     <div class="history-card">
-                        <div id="history-list" class="history-list"></div>
+                        <div id="activities-list" class="activities-list"></div>
                     </div>
                 </div>
             </main>

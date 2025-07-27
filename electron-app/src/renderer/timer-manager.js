@@ -5,53 +5,42 @@ class TimerManager {
   }
 
   startTimer() {
-    if (!this.state.canStartTimer()) {
-      console.log('Cannot start timer:', {
-        selectedProjectId: this.state.selectedProjectId,
-        selectedTaskId: this.state.selectedTaskId,
-        isTimerRunning: this.state.isTimerRunning
-      });
-      return;
-    }
-
-    console.log('Starting timer...');
-    this.state.startTimer();
-    this.uiManager.updateTimerControls(this.state);
-    this.uiManager.updateTimerDisplay(0);
+    // Recache DOM elements to ensure timer display is found
+    this.uiManager.recacheAndVerifyTimer();
+    
+    // Start the optimized timer loop
     this.startOptimizedTimer();
-    console.log('Timer started successfully');
   }
 
   stopTimer() {
-    if (!this.state.isTimerRunning) {
-      console.log('Timer is not running, cannot stop');
-      return;
-    }
-
-    console.log('Stopping timer...');
-    const timeEntryData = this.state.stopTimer();
-    this.uiManager.updateTimerControls(this.state);
-    this.uiManager.updateTimerDisplay(this.getElapsedTime());
+    // Stop the animation frame loop
     this.stopOptimizedTimer();
-    console.log('Timer stopped, timeEntryData:', timeEntryData);
-
-    return timeEntryData;
+    
+    // Get the final elapsed time
+    const finalElapsed = this.getElapsedTime();
+    
+    // Update the display one last time
+    this.uiManager.updateTimerDisplay(finalElapsed);
   }
 
   startOptimizedTimer() {
-    console.log('Starting optimized timer loop...');
+    let frameCount = 0;
+    let lastElapsed = 0;
+    
     const updateTimer = () => {
-      if (!this.state.isTimerRunning || !this.state.startTime) {
-        console.log('Timer loop stopped: timer not running or no start time');
+      frameCount++;
+      
+      if (!this.state.isTimerRunning) {
         return;
       }
 
-      const now = Date.now();
-      if (now - this.state.lastTimerUpdate >= this.state.TIMER_UPDATE_THRESHOLD) {
-        const elapsed = this.getElapsedTime();
-        console.log('Updating timer display, elapsed:', elapsed);
+      // Update timer display every frame for smoother updates
+      const elapsed = this.getElapsedTime();
+      
+      // Only update if elapsed time changed significantly
+      if (Math.abs(elapsed - lastElapsed) > 100) { // Update every 100ms
         this.uiManager.updateTimerDisplay(elapsed);
-        this.state.lastTimerUpdate = now;
+        lastElapsed = elapsed;
       }
 
       const animationFrameId = requestAnimationFrame(updateTimer);
@@ -59,6 +48,14 @@ class TimerManager {
     };
 
     requestAnimationFrame(updateTimer);
+  }
+
+  // Manual timer update for testing
+  manualUpdateTimer() {
+    if (this.state.isTimerRunning && this.state.startTime) {
+      const elapsed = this.getElapsedTime();
+      this.uiManager.updateTimerDisplay(elapsed);
+    }
   }
 
   stopOptimizedTimer() {
@@ -70,12 +67,8 @@ class TimerManager {
   }
 
   getElapsedTime() {
-    if (!this.state.isTimerRunning || !this.state.startTime) {
-      return 0;
-    }
-
-    const now = new Date();
-    return now.getTime() - this.state.startTime.getTime();
+    // Return total elapsed time including all sessions and current session
+    return this.state.getTotalElapsedTime();
   }
 
   formatDuration(milliseconds) {
