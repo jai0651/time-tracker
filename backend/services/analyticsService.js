@@ -142,8 +142,7 @@ class AnalyticsService {
     const include = this.buildIncludeClause(filters.includeDetails);
     const orderBy = this.buildOrderClause(filters.sortBy, filters.sortOrder);
 
-    console.log('Analytics query params:', filters);
-    console.log('Where clause:', JSON.stringify(where, null, 2));
+
 
     const activities = await prisma.activity.findMany({
       where,
@@ -153,7 +152,6 @@ class AnalyticsService {
       skip: parseInt(filters.offset)
     });
 
-    console.log(`Found ${activities.length} activities`);
 
     const totalCount = await prisma.activity.count({ where });
     const summary = await this.calculateSummaryStats(where);
