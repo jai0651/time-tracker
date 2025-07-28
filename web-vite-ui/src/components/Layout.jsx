@@ -39,7 +39,6 @@ export default function Layout({ children }) {
                   <Link to="/admin/shift" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Shift</Link>
                   <Link to="/admin/analytics" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Analytics</Link>
                   <Link to="/admin/screenshots" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Screenshots</Link>
-                  <Link to="/admin/screenshots" className="text-gray-600 hover:text-indigo-700 font-medium px-3 py-1">Screenshots</Link>
                 </>
               ) : (
                 <>
