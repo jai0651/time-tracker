@@ -13,6 +13,7 @@ import activitiesRouter from './routes/activities.js';
 import sharedSettingsRouter from './routes/sharedSettings.js';
 import analyticsRouter from './routes/analytics.js';
 import screenshotsRouter from './routes/screenshots.js';
+import downloadsRouter from './routes/downloads.js';
 import cors from 'cors';
 
 dotenv.config();
@@ -52,6 +53,7 @@ app.use('/api/v1/activity', activitiesRouter);
 app.use('/api/v1/shared-settings', sharedSettingsRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/screenshots', screenshotsRouter);
+app.use('/api/v1/downloads', downloadsRouter);
 
 // Root route
 app.get('/', (req, res) => {

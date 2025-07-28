@@ -1,6 +1,5 @@
 const { ipcRenderer } = require('electron');
 const axios = require('axios');
-const NetworkMonitor = require('./network-monitor');
 
 class ApiService {
   constructor() {

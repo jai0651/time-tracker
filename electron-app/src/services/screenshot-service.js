@@ -11,16 +11,9 @@ class ScreenshotService {
     this.isCapturing = false;
     this.screenshotQueue = [];
     this.uploadQueue = [];
-    this.screenshotsDir = path.join(process.cwd(), 'screenshots');
     
-    this.ensureScreenshotsDirectory();
   }
 
-  ensureScreenshotsDirectory() {
-    if (!fs.existsSync(this.screenshotsDir)) {
-      fs.mkdirSync(this.screenshotsDir, { recursive: true });
-    }
-  }
 
   // Start screenshot capture for an activity
   async startScreenshotCapture(activityId) {

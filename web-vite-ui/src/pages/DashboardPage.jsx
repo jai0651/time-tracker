@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import api from '../api';
+import downloadRepository from '../repository/downloadRepository.js';
 
 function getUserFromToken() {
   const token = localStorage.getItem('token');
@@ -18,20 +19,31 @@ export default function DashboardPage() {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloadInfo, setDownloadInfo] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     console.log('DashboardPage user:', user);
     if (user && user.userId) {
       setLoading(true);
-      api.get(`/employee/${user.userId}`)
-        .then(res => {
-          console.log('Employee API response:', res.data);
-          setEmployee(res.data);
+      
+      // Load employee data and download info
+      Promise.all([
+        api.get(`/employee/${user.userId}`),
+        downloadRepository.getDesktopAppInfo().catch(err => {
+          console.error('Download info error:', err);
+          return null;
+        })
+      ])
+        .then(([employeeRes, downloadRes]) => {
+          console.log('Employee API response:', employeeRes.data);
+          setEmployee(employeeRes.data);
+          setDownloadInfo(downloadRes);
           setLoading(false);
         })
         .catch((err) => {
-          console.error('Employee API error:', err);
-          setError('Failed to load employee data');
+          console.error('API error:', err);
+          setError('Failed to load data');
           setLoading(false);
         });
     } else {
@@ -64,18 +76,73 @@ export default function DashboardPage() {
     );
   }
 
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      await downloadRepository.downloadDesktopApp();
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="w-full max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 flex flex-col gap-6 items-center">
         <h2 className="text-3xl font-extrabold text-indigo-700 mb-1">Welcome{employee?.email ? `, ${employee.email}` : ''}!</h2>
-        <p className="text-gray-500 text-sm mb-4">Download the desktop app to start tracking your time.</p>
-        <a
-          href="/download/desktop-app"
-          className="bg-indigo-600 text-white px-6 py-3 rounded-lg shadow font-semibold hover:bg-indigo-700 transition"
-          download
-        >
-          Download Desktop App
-        </a>
+        
+        {/* Desktop App Download Section */}
+        <div className="w-full bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+          <h3 className="text-lg font-semibold text-indigo-800 mb-2">📱 Desktop App</h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Download the desktop app to start tracking your time with automatic screenshots and activity monitoring.
+          </p>
+          
+          {downloadInfo ? (
+            <div className="space-y-3 mb-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Version:</span>
+                <span className="font-medium">{downloadInfo.version}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Platform:</span>
+                <span className="font-medium">{downloadInfo.platform}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">File Size:</span>
+                <span className="font-medium">{downloadInfo.fileSizeFormatted}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 mb-4">
+              Loading download information...
+            </div>
+          )}
+          
+          <div className="flex gap-3">
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {downloading ? 'Downloading...' : 'Download Desktop App'}
+            </button>
+            
+            <a
+              href={downloadRepository.getDesktopAppDownloadUrl()}
+              className="px-4 py-3 border border-indigo-300 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition"
+              download
+            >
+              Direct Link
+            </a>
+          </div>
+          
+          <div className="mt-3 text-xs text-gray-500">
+            ⚡ Features: Automatic screenshots, activity tracking, time monitoring
+          </div>
+        </div>
         {/* Projects Section */}
         <div className="w-full mt-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Your Projects</h3>
