@@ -162,7 +162,7 @@ class AppController {
         captureStatus.isCapturing,
         captureStatus.screenshotCount,
         captureStatus.hasPermissions,
-        captureStatus.intervalMinutes
+        captureStatus.intervalSeconds
       );
       
       // Show permission message
@@ -480,7 +480,7 @@ class AppController {
           captureStatus.isCapturing,
           captureStatus.screenshotCount,
           captureStatus.hasPermissions,
-          captureStatus.intervalMinutes
+          captureStatus.intervalSeconds
         );
         
         this.uiManager.showMessage('timerSuccess', 'Screenshot permissions granted! Screenshots will now be captured.');

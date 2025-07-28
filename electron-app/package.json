@@ -36,12 +36,19 @@
     },
     "files": [
       "main.js",
+      "src/**/*",
       "renderer/**/*",
+      "assets/**/*",
       "node_modules/**/*"
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "assets/icon.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
       "target": "nsis"

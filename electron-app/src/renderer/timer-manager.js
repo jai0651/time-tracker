@@ -44,7 +44,7 @@ class TimerManager {
         lastElapsed = elapsed;
       }
 
-      // Update screenshot count every 5 seconds
+      // Update screenshot count every 5 seconds (from config)
       if (elapsed - lastScreenshotUpdate > 5000) {
         this.updateScreenshotStatus();
         lastScreenshotUpdate = elapsed;
@@ -65,7 +65,7 @@ class TimerManager {
         captureStatus.isCapturing,
         captureStatus.screenshotCount,
         captureStatus.hasPermissions,
-        captureStatus.intervalMinutes
+        captureStatus.intervalSeconds
       );
     }
   }

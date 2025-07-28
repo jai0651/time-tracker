@@ -45,7 +45,7 @@ class UIManager {
   testTimerDisplay() {
     const timerElement = document.getElementById('timer');
     if (timerElement) {
-      timerElement.textContent = '00:01:30';
+      timerElement.textContent = '00:00:00';
       return true;
     } else {
       return false;
@@ -352,7 +352,7 @@ class UIManager {
   }
 
   // Screenshot status updates
-  updateScreenshotStatus(isCapturing, count = 0, hasPermissions = true, interval = 5) {
+  updateScreenshotStatus(isCapturing, count = 0, hasPermissions = true, intervalSeconds = 20) {
     if (!this.elements.screenshotStatus) {
       return;
     }
@@ -370,7 +370,11 @@ class UIManager {
       }
       
       if (this.elements.screenshotInterval) {
-        this.elements.screenshotInterval.textContent = interval;
+        // Display interval in a user-friendly format
+        const displayText = intervalSeconds < 60 ? 
+          `${intervalSeconds} seconds` : 
+          `${Math.round(intervalSeconds / 60)} minutes`;
+        this.elements.screenshotInterval.textContent = displayText;
       }
 
       // Show/hide retry permission button based on permission status

@@ -2,12 +2,13 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const ApiService = require('./api-service');
+const AppConfig = require('../config/app-config');
 
 class ScreenshotService {
   constructor() {
     this.apiService = new ApiService();
     this.screenshotInterval = null;
-    this.screenshotIntervalMinutes = 0.33; // Default: take screenshot every 20 seconds (for development)
+    this.screenshotIntervalSeconds = AppConfig.getScreenshotInterval(); // Use centralized config
     this.isCapturing = false;
     this.screenshotQueue = [];
     this.uploadQueue = [];
@@ -57,7 +58,7 @@ class ScreenshotService {
       if (this.isCapturing) {
         await this.captureAndUploadScreenshot(activityId);
       }
-    }, this.screenshotIntervalMinutes * 60 * 1000);
+    }, this.screenshotIntervalSeconds * 1000);
   }
 
   // Stop screenshot capture
@@ -73,10 +74,10 @@ class ScreenshotService {
     console.log('Screenshot capture stopped');
   }
 
-  // Set screenshot interval (in minutes)
-  setScreenshotInterval(minutes) {
-    this.screenshotIntervalMinutes = minutes;
-    console.log(`Screenshot interval set to ${minutes} minutes`);
+  // Set screenshot interval (in seconds)
+  setScreenshotInterval(seconds) {
+    this.screenshotIntervalSeconds = seconds;
+    console.log(`Screenshot interval set to ${seconds} seconds`);
   }
 
   // Capture screenshot and upload to backend
@@ -331,7 +332,9 @@ class ScreenshotService {
     return {
       isCapturing: this.isCapturing,
       currentActivityId: this.currentActivityId,
-      intervalMinutes: this.screenshotIntervalMinutes,
+      intervalSeconds: this.screenshotIntervalSeconds,
+      intervalMinutes: AppConfig.getScreenshotIntervalMinutes(),
+      intervalDisplay: AppConfig.getScreenshotIntervalDisplay(),
       screenshotCount: this.screenshotCount || 0,
       hasPermissions: !this.permissionDenied,
       permissionError: this.permissionError

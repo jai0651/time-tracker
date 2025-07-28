@@ -9,7 +9,7 @@ The screenshot feature automatically captures screenshots during work activities
 ### Automatic Screenshot Capture
 - Screenshots are taken automatically when a timer is started
 - Development interval: every 20 seconds (for testing)
-- Production interval: every 5 minutes
+- Production interval: every 5 minutes (configurable)
 - Screenshots are uploaded to the backend immediately after capture
 - Permission status is tracked and displayed to the user
 
@@ -91,12 +91,18 @@ The `Screenshot` model includes:
 ## Configuration
 
 ### Screenshot Interval
-The development interval is 20 seconds for testing. To change this:
+The screenshot interval is now centralized in the configuration. To change this:
 
 ```javascript
-// In the ScreenshotService
-this.screenshotIntervalMinutes = 0.33; // 20 seconds (development)
-this.screenshotIntervalMinutes = 5; // 5 minutes (production)
+// In src/config/app-config.js
+screenshot: {
+  intervalSeconds: 20, // 20 seconds for development
+  intervalMinutes: 0.33, // 20 seconds in minutes
+}
+
+// For production, the config automatically changes to:
+intervalSeconds: 300, // 5 minutes
+intervalMinutes: 5,
 ```
 
 ### Screenshot Quality
