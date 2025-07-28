@@ -11,6 +11,8 @@ import TasksPage from './pages/TasksPage';
 import TimeEntriesPage from './pages/TimeEntriesPage';
 import ShiftsPage from './pages/ShiftsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import ScreenshotsPage from './pages/ScreenshotsPage';
+import AdminScreenshotsPage from './pages/AdminScreenshotsPage';
 import { jwtDecode } from 'jwt-decode';
 
 function getUserFromToken() {
@@ -50,10 +52,12 @@ export default function App() {
           <Route path="/admin/task" element={<TasksPage />} />
           <Route path="/admin/shift" element={<ShiftsPage />} />
           <Route path="/admin/analytics" element={<AnalyticsPage />} />
+          <Route path="/admin/screenshots" element={<AdminScreenshotsPage />} />
         </Route>
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/time-entries" element={<TimeEntriesPage />} />
+          <Route path="/screenshots" element={<ScreenshotsPage />} />
         </Route>
       </Routes>
     </Router>

@@ -21,13 +21,13 @@ model Employee {
   tasks            Task[]      @relation("TaskEmployees")
   shifts           Shift[]
   activities       Activity[]
+  screenshots      Screenshot[] // Relation to screenshots
   timeEntries      TimeEntry[] // Legacy relation
   sharedSettings   SharedSettings? @relation(fields: [sharedSettingsId], references: [id])
   
   // New relations for complete onboarding flow
   verificationTokens VerificationToken[]
   credentials       Credentials?
-
 }
 
 model SharedSettings {
@@ -107,6 +107,33 @@ model Activity {
   description     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  screenshots     Screenshot[] // Relation to screenshots
+}
+
+// Screenshot model for tracking user screenshots during activities
+model Screenshot {
+  id              String   @id @default(cuid())
+  activityId      String?
+  activity        Activity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  imageUrl        String   // URL to the uploaded screenshot
+  thumbnailUrl    String?  // Optional thumbnail URL
+  fileName        String   // Original filename
+  fileSize        Int      // File size in bytes
+  mimeType        String   // Image MIME type (e.g., "image/png")
+  width           Int      // Screenshot width in pixels
+  height          Int      // Screenshot height in pixels
+  hasPermissions  Boolean  @default(false) // Whether app had proper permissions
+  permissionError String?  // Description of permission issue if any
+  capturedAt      DateTime @default(now()) // When screenshot was taken
+  uploadedAt      DateTime @default(now()) // When uploaded to storage
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([activityId])
+  @@index([employeeId])
+  @@index([capturedAt])
 }
 
 // Legacy models for backward compatibility

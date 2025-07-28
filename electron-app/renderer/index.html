@@ -129,6 +129,21 @@
                             <div id="status" class="status">Select a shift to start timer</div>
                         </div>
 
+                        <!-- Screenshot Status -->
+                        <div id="screenshot-status" class="screenshot-status hidden">
+                            <div class="screenshot-indicator">
+                                <span class="screenshot-icon">📸</span>
+                                <span class="screenshot-text">Screenshots: <span id="screenshot-count">0</span></span>
+                                <span id="screenshot-permission" class="permission-indicator">✅</span>
+                            </div>
+                            <div class="screenshot-info">
+                                <small>Taking screenshots every <span id="screenshot-interval">20</span> seconds</small>
+                                <button id="retry-permission-btn" class="btn btn-sm btn-secondary" style="display: none;">
+                                    Retry Permission
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Activity Info -->
                         <div id="activity-info" class="activity-info hidden">
                             <div class="info-grid">

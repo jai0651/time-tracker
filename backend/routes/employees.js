@@ -243,6 +243,48 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// GET /employee/me - Get current user's employee data
+// router.get('/me', auth, async (req, res) => {
+//   try {
+//     const employee = await prisma.employee.findUnique({
+//       where: { id: req.user.id },
+//       include: {
+//         projects: {
+//           select: {
+//             id: true,
+//             name: true,
+//             description: true
+//           }
+//         },
+//         tasks: {
+//           select: {
+//             id: true,
+//             name: true,
+//             description: true,
+//             status: true,
+//             priority: true,
+//             project: {
+//               select: {
+//                 id: true,
+//                 name: true
+//               }
+//             }
+//           }
+//         }
+//       }
+//     });
+    
+//     if (!employee) {
+//       return res.status(404).json({ error: 'Employee not found' });
+//     }
+    
+//     res.json(employee);
+//   } catch (error) {
+//     console.error('Error fetching current employee:', error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
+
 // GET /employee/:id - Get specific employee
 router.get('/:id', auth, async (req, res) => {
   try {

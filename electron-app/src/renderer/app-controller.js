@@ -1,5 +1,6 @@
 const AppState = require('./state');
 const ApiService = require('../services/api-service');
+const ScreenshotService = require('../services/screenshot-service');
 const TimerManager = require('./timer-manager');
 const UIManager = require('./ui-manager');
 
@@ -7,8 +8,15 @@ class AppController {
   constructor() {
     this.state = new AppState();
     this.apiService = new ApiService();
+    this.screenshotService = new ScreenshotService();
     this.uiManager = new UIManager();
     this.timerManager = new TimerManager(this.state, this.uiManager);
+    
+    // Set API service in screenshot service
+    this.screenshotService.setApiService(this.apiService);
+    
+    // Set screenshot service in state for timer manager access
+    this.state.screenshotService = this.screenshotService;
     
     this.initialize();
   }
@@ -90,6 +98,11 @@ class AppController {
     
     // Logout
     this.uiManager.elements.logoutBtn.addEventListener('click', this.handleLogout.bind(this));
+    
+    // Retry permission button
+    if (this.uiManager.elements.retryPermissionBtn) {
+      this.uiManager.elements.retryPermissionBtn.addEventListener('click', this.handleRetryPermission.bind(this));
+    }
   }
 
   // Authentication
@@ -136,9 +149,27 @@ class AppController {
       // Then start the timer manager
       this.timerManager.startTimer();
       
+      // Start screenshot capture (will be linked to activity when saved)
+      await this.screenshotService.startScreenshotCapture(null); // No activity ID yet
+      
       // Update UI
       this.uiManager.updateTimerStatus('Timer started - Working...', true);
       this.uiManager.updateActivityControls(this.state);
+      
+      // Update screenshot status
+      const captureStatus = this.screenshotService.getCaptureStatus();
+      this.uiManager.updateScreenshotStatus(
+        captureStatus.isCapturing,
+        captureStatus.screenshotCount,
+        captureStatus.hasPermissions,
+        captureStatus.intervalMinutes
+      );
+      
+      // Show permission message
+      this.uiManager.showScreenshotPermissionMessage(
+        captureStatus.hasPermissions,
+        captureStatus.permissionError
+      );
       
       this.uiManager.showMessage('timerSuccess', 'Timer started!');
     } catch (error) {
@@ -160,8 +191,14 @@ class AppController {
       // Then stop the state timer
       const sessionData = this.state.stopTimer();
       
+      // Stop screenshot capture
+      this.screenshotService.stopScreenshotCapture();
+      
       this.uiManager.updateTimerStatus('Timer stopped', false);
       this.uiManager.updateActivityControls(this.state);
+      
+      // Hide screenshot status
+      this.uiManager.hideScreenshotStatus();
       
       // Update activity info with session details
       this.uiManager.updateActivityInfo({
@@ -202,6 +239,22 @@ class AppController {
       );
       
       this.state.setCurrentActivity(activity);
+      
+      // Link any orphaned screenshots to this activity
+      try {
+        const orphanedScreenshots = await this.screenshotService.getScreenshots(null, {
+          startDate: firstSession.startTime.toISOString(),
+          endDate: lastSession.endTime.toISOString()
+        });
+        
+        if (orphanedScreenshots.screenshots && orphanedScreenshots.screenshots.length > 0) {
+          const screenshotIds = orphanedScreenshots.screenshots.map(s => s.id);
+          await this.screenshotService.linkScreenshotsToActivity(screenshotIds, activity.id);
+          console.log(`Linked ${screenshotIds.length} screenshots to activity ${activity.id}`);
+        }
+      } catch (screenshotError) {
+        console.error('Failed to link screenshots to activity:', screenshotError);
+      }
       
       // Clear all timer sessions after saving
       this.state.clearTimerSessions();
@@ -411,8 +464,39 @@ class AppController {
     }
   }
 
+  // Retry permission request
+  async handleRetryPermission() {
+    try {
+      const permissionResult = await this.screenshotService.requestScreenPermissions();
+      
+      if (permissionResult.granted) {
+        // Update permission status
+        this.screenshotService.permissionDenied = false;
+        this.screenshotService.permissionError = null;
+        
+        // Update UI
+        const captureStatus = this.screenshotService.getCaptureStatus();
+        this.uiManager.updateScreenshotStatus(
+          captureStatus.isCapturing,
+          captureStatus.screenshotCount,
+          captureStatus.hasPermissions,
+          captureStatus.intervalMinutes
+        );
+        
+        this.uiManager.showMessage('timerSuccess', 'Screenshot permissions granted! Screenshots will now be captured.');
+      } else {
+        this.uiManager.showMessage('timerError', `Permission still denied: ${permissionResult.message}`);
+      }
+    } catch (error) {
+      this.uiManager.showMessage('timerError', 'Failed to request permissions. Please try again.');
+    }
+  }
+
   // Logout
   handleLogout() {
+    // Stop screenshot capture if running
+    this.screenshotService.stopScreenshotCapture();
+    
     this.state.reset();
     this.apiService.resetApiClient();
     this.uiManager.resetUI();

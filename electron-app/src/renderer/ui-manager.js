@@ -31,7 +31,12 @@ class UIManager {
       activityStart: document.getElementById('activity-start'),
       activityDuration: document.getElementById('activity-duration'),
       shiftsList: document.getElementById('shifts-list'),
-      activitiesList: document.getElementById('activities-list')
+      activitiesList: document.getElementById('activities-list'),
+      screenshotStatus: document.getElementById('screenshot-status'),
+      screenshotCount: document.getElementById('screenshot-count'),
+      screenshotPermission: document.getElementById('screenshot-permission'),
+      screenshotInterval: document.getElementById('screenshot-interval'),
+      retryPermissionBtn: document.getElementById('retry-permission-btn')
     };
     
   }
@@ -343,6 +348,56 @@ class UIManager {
     const targetLink = document.getElementById(linkId);
     if (targetLink) {
       targetLink.classList.add('active');
+    }
+  }
+
+  // Screenshot status updates
+  updateScreenshotStatus(isCapturing, count = 0, hasPermissions = true, interval = 5) {
+    if (!this.elements.screenshotStatus) {
+      return;
+    }
+
+    if (isCapturing) {
+      this.elements.screenshotStatus.classList.remove('hidden');
+      
+      if (this.elements.screenshotCount) {
+        this.elements.screenshotCount.textContent = count;
+      }
+      
+      if (this.elements.screenshotPermission) {
+        this.elements.screenshotPermission.textContent = hasPermissions ? '✅' : '❌';
+        this.elements.screenshotPermission.className = `permission-indicator ${hasPermissions ? 'granted' : 'denied'}`;
+      }
+      
+      if (this.elements.screenshotInterval) {
+        this.elements.screenshotInterval.textContent = interval;
+      }
+
+      // Show/hide retry permission button based on permission status
+      if (this.elements.retryPermissionBtn) {
+        if (!hasPermissions) {
+          this.elements.retryPermissionBtn.style.display = 'inline-block';
+          this.elements.retryPermissionBtn.style.marginLeft = '10px';
+        } else {
+          this.elements.retryPermissionBtn.style.display = 'none';
+        }
+      }
+    } else {
+      this.elements.screenshotStatus.classList.add('hidden');
+    }
+  }
+
+  hideScreenshotStatus() {
+    if (this.elements.screenshotStatus) {
+      this.elements.screenshotStatus.classList.add('hidden');
+    }
+  }
+
+  showScreenshotPermissionMessage(hasPermissions, message = '') {
+    if (hasPermissions) {
+      this.showMessage('timerSuccess', 'Screenshot permissions granted! Screenshots will be captured during your work sessions.');
+    } else {
+      this.showMessage('timerError', `Screenshot permissions denied: ${message}. Screenshots will not be captured.`);
     }
   }
 }

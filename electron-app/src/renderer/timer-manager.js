@@ -26,6 +26,7 @@ class TimerManager {
   startOptimizedTimer() {
     let frameCount = 0;
     let lastElapsed = 0;
+    let lastScreenshotUpdate = 0;
     
     const updateTimer = () => {
       frameCount++;
@@ -43,11 +44,30 @@ class TimerManager {
         lastElapsed = elapsed;
       }
 
+      // Update screenshot count every 5 seconds
+      if (elapsed - lastScreenshotUpdate > 5000) {
+        this.updateScreenshotStatus();
+        lastScreenshotUpdate = elapsed;
+      }
+
       const animationFrameId = requestAnimationFrame(updateTimer);
       this.state.setAnimationFrameId(animationFrameId);
     };
 
     requestAnimationFrame(updateTimer);
+  }
+
+  updateScreenshotStatus() {
+    // This will be called by the app controller
+    if (this.state.screenshotService) {
+      const captureStatus = this.state.screenshotService.getCaptureStatus();
+      this.uiManager.updateScreenshotStatus(
+        captureStatus.isCapturing,
+        captureStatus.screenshotCount,
+        captureStatus.hasPermissions,
+        captureStatus.intervalMinutes
+      );
+    }
   }
 
   // Manual timer update for testing

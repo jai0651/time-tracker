@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
 const axios = require('axios');
+const NetworkMonitor = require('./network-monitor');
 
 class ApiService {
   constructor() {
@@ -193,6 +194,51 @@ class ApiService {
     }
   }
 
+  // Screenshot methods
+  async uploadScreenshot(screenshotData) {
+    return this.makeApiCall('post', '/screenshots', screenshotData);
+  }
+
+  async uploadScreenshotsBatch(screenshotsData) {
+    return this.makeApiCall('post', '/screenshots/batch', { screenshots: screenshotsData });
+  }
+
+  async getScreenshots(activityId = null, options = {}) {
+    const params = new URLSearchParams();
+    
+    if (activityId) params.append('activityId', activityId);
+    if (options.startDate) params.append('startDate', options.startDate);
+    if (options.endDate) params.append('endDate', options.endDate);
+    if (options.hasPermissions !== undefined) params.append('hasPermissions', options.hasPermissions);
+    if (options.limit) params.append('limit', options.limit);
+    if (options.offset) params.append('offset', options.offset);
+    
+    const url = activityId ? `/screenshots/activity/${activityId}` : `/screenshots/my?${params.toString()}`;
+    return this.makeApiCall('get', url);
+  }
+
+  async getScreenshotStats(options = {}) {
+    const params = new URLSearchParams();
+    
+    if (options.startDate) params.append('startDate', options.startDate);
+    if (options.endDate) params.append('endDate', options.endDate);
+    
+    const url = `/screenshots/stats?${params.toString()}`;
+    return this.makeApiCall('get', url);
+  }
+
+  async deleteScreenshot(screenshotId) {
+    return this.makeApiCall('delete', `/screenshots/${screenshotId}`);
+  }
+
+  async updateScreenshot(screenshotId, updateData) {
+    return this.makeApiCall('put', `/screenshots/${screenshotId}`, updateData);
+  }
+
+  async linkScreenshotsToActivity(screenshotIds, activityId) {
+    return this.makeApiCall('post', `/screenshots/activity/${activityId}/link`, { screenshotIds });
+  }
+
   // Enhanced API call with debugging
   async makeApiCall(method, url, data = null) {
     const api = await this.createApiClient();
@@ -207,12 +253,21 @@ class ApiService {
         ...(data && { data })
       };
       
-      console.log(`Making ${method.toUpperCase()} request to ${url}`);
+      const startTime = Date.now();
+      console.log(`🌐 [${new Date().toISOString()}] Making ${method.toUpperCase()} request to ${url}`);
+      
+      if (data) {
+        const payloadSize = JSON.stringify(data).length;
+        console.log(`📦 Payload size: ${(payloadSize / 1024).toFixed(2)} KB`);
+      }
+      
       const response = await api(config);
-      console.log(`API call successful: ${method.toUpperCase()} ${url}`);
+      const duration = Date.now() - startTime;
+      console.log(`✅ [${new Date().toISOString()}] API call successful: ${method.toUpperCase()} ${url} (${duration}ms)`);
       return response.data;
     } catch (error) {
-      console.error(`API call failed: ${method.toUpperCase()} ${url}`, error.response?.data || error.message);
+      const duration = Date.now() - startTime;
+      console.error(`❌ [${new Date().toISOString()}] API call failed: ${method.toUpperCase()} ${url} (${duration}ms)`, error.response?.data || error.message);
       throw error;
     }
   }

@@ -12,6 +12,7 @@ import shiftsRouter from './routes/shifts.js';
 import activitiesRouter from './routes/activities.js';
 import sharedSettingsRouter from './routes/sharedSettings.js';
 import analyticsRouter from './routes/analytics.js';
+import screenshotsRouter from './routes/screenshots.js';
 import cors from 'cors';
 
 dotenv.config();
@@ -19,7 +20,8 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Swagger UI for API documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
@@ -49,6 +51,7 @@ app.use('/api/v1/shift', shiftsRouter);
 app.use('/api/v1/activity', activitiesRouter);
 app.use('/api/v1/shared-settings', sharedSettingsRouter);
 app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/screenshots', screenshotsRouter);
 
 // Root route
 app.get('/', (req, res) => {
