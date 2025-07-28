@@ -269,6 +269,12 @@ cd electron-app
 
 ## 📊 API Documentation
 
+### Interactive API Docs
+Access the complete API documentation with Swagger UI:
+```
+http://localhost:3000/api-docs
+```
+
 ### Core Endpoints
 - `POST /api/v1/auth/login` - User authentication
 - `GET /api/v1/employees` - Employee management
